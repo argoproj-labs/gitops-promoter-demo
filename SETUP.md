@@ -110,16 +110,44 @@ If you are using your own domain instead of `gitops-promoter.dev`, update:
 
 ## 3. Authenticate to Google Cloud
 
-Log into GCP with the Google identity that should own this demo (use a dedicated account if you like), and set up Application Default Credentials for OpenTofu/Terraform.
+Log into GCP with the **same** Google identity that will own this demo cluster, and set up Application Default Credentials (ADC) for OpenTofu/Terraform. If you use several accounts on one laptop (for example a personal account and a **dedicated demo Gmail**), be explicit—otherwise `gcloud` and ADC can keep using an old account and you will provision or query the wrong project.
 
-```bash
-gcloud auth login
-# Optional: pin the active CLI account when you use several Google identities
-# gcloud config set account <your-google-account>
-gcloud auth application-default login
-gcloud config set project <your-project-id>
-gcloud auth application-default set-quota-project <your-project-id>
-```
+### 3.1 Dedicated Google account (clean slate, recommended)
+
+Use this flow when the demo lives under a **new Gmail** (or any identity) that should not touch your existing GCP projects.
+
+1. Sign in and **pin** that identity for the CLI (replace the email):
+
+   ```bash
+   gcloud auth login <your-demo-google-account>
+   gcloud config set account <your-demo-google-account>
+   ```
+
+2. **Detach** the CLI default project if it still points at something else (optional but avoids confusion):
+
+   ```bash
+   gcloud config unset project
+   ```
+
+3. Point ADC at the **same** user (OpenTofu uses ADC, not the `gcloud` account alone):
+
+   ```bash
+   gcloud auth application-default login
+   ```
+
+4. Confirm billing is visible **to this account** (you need an **OPEN** billing account ID for `terraform.tfvars`):
+
+   ```bash
+   gcloud auth list
+   gcloud billing accounts list
+   ```
+
+5. You do **not** need an existing GCP project before the first `tofu apply`—this repository’s stack **always creates** the project (see **`project_id`** in `terraform.tfvars`). After apply succeeds, point `gcloud` and ADC at that project for follow-on commands:
+
+   ```bash
+   gcloud config set project <project_id from terraform.tfvars>
+   gcloud auth application-default set-quota-project <project_id from terraform.tfvars>
+   ```
 
 ## 4. Prepare variables (`terraform.tfvars`)
 
@@ -129,30 +157,15 @@ Copy the example file and edit it for your environment.
 cp infra/gcp/terraform/terraform.tfvars.example infra/gcp/terraform/terraform.tfvars
 ```
 
-Typical fields to edit:
+Pick a **globally unique** `project_id` (6–30 characters; lowercase letters, digits, hyphens). It must **not** reuse an old demo project id from another account.
 
-- `create_project`
-- `project_id`
-- `project_name`
-- `billing_account`
-- `region`
-- `cluster_name`
-- `node_machine_type`
-- `node_disk_size_gb`
-- `node_count_min`
-- `node_count_max`
+Set only:
 
-If the GCP project already exists, use:
+- `project_id` — id for the **new** project OpenTofu creates
+- `project_name` — display name in the Cloud Console
+- `billing_account` — OPEN billing account id from `gcloud billing accounts list`
 
-```hcl
-create_project = false
-```
-
-If you want OpenTofu/Terraform to create the project, use:
-
-```hcl
-create_project = true
-```
+Region, cluster name, VPC CIDRs, and node pool sizing are **locals in `main.tf`**; change them there if you need a different region, larger machines, or higher quotas.
 
 ## 5. Provision the GKE cluster
 
@@ -168,6 +181,7 @@ cd ../../..
 
 This stack creates:
 
+- a new GCP project (linked to **`billing_account`**)
 - required GCP APIs
 - a custom VPC
 - a subnet with pod/service secondary ranges

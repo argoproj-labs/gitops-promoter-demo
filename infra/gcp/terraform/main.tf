@@ -9,64 +9,69 @@ locals {
     "serviceusage.googleapis.com"
   ])
 
-  effective_project_id = var.create_project ? google_project.demo[0].project_id : data.google_project.existing[0].project_id
+  region       = "us-central1"
+  cluster_name = "gitops-promoter-demo"
+
+  network_name = "gitops-promoter-vpc"
+  subnet_cidr  = "10.10.0.0/20"
+
+  pods_range_name    = "pods"
+  pods_cidr          = "10.20.0.0/16"
+  services_range_name = "services"
+  services_cidr      = "10.30.0.0/20"
+
+  # Sized for typical new-project quotas (CPUS_ALL_REGIONS / SSD); edit here if you raise quotas.
+  node_machine_type = "e2-standard-2"
+  node_disk_size_gb   = 100
+  node_disk_type      = "pd-standard"
+  node_count_min      = 2
+  node_count_max      = 4
 }
 
 resource "google_project" "demo" {
-  count = var.create_project ? 1 : 0
-
   project_id      = var.project_id
   name            = var.project_name
   billing_account = var.billing_account
-
-  org_id    = var.org_id
-  folder_id = var.folder_id
-}
-
-data "google_project" "existing" {
-  count = var.create_project ? 0 : 1
-
-  project_id = var.project_id
 }
 
 resource "google_project_service" "required" {
   for_each = local.required_apis
 
-  project            = local.effective_project_id
+  project            = google_project.demo.project_id
   service            = each.value
   disable_on_destroy = false
 }
 
 resource "google_compute_network" "demo" {
-  name                    = var.network_name
-  project                 = local.effective_project_id
+  name                    = local.network_name
+  project                 = google_project.demo.project_id
   auto_create_subnetworks = false
 
   depends_on = [google_project_service.required]
 }
 
 resource "google_compute_subnetwork" "demo" {
-  name          = "${var.cluster_name}-subnet"
-  ip_cidr_range = var.subnet_cidr
-  region        = var.region
-  project       = local.effective_project_id
+  name          = "${local.cluster_name}-subnet"
+  ip_cidr_range = local.subnet_cidr
+  region        = local.region
+  project       = google_project.demo.project_id
   network       = google_compute_network.demo.id
 
   secondary_ip_range {
-    range_name    = var.pods_secondary_range_name
-    ip_cidr_range = var.pods_secondary_cidr
+    range_name    = local.pods_range_name
+    ip_cidr_range = local.pods_cidr
   }
 
   secondary_ip_range {
-    range_name    = var.services_secondary_range_name
-    ip_cidr_range = var.services_secondary_cidr
+    range_name    = local.services_range_name
+    ip_cidr_range = local.services_cidr
   }
 }
 
 resource "google_container_cluster" "demo" {
-  name       = var.cluster_name
-  location   = var.region
-  project    = local.effective_project_id
+  name       = local.cluster_name
+  location   = local.region
+  project    = google_project.demo.project_id
   network    = google_compute_network.demo.name
   subnetwork = google_compute_subnetwork.demo.name
 
@@ -79,30 +84,41 @@ resource "google_container_cluster" "demo" {
   }
 
   ip_allocation_policy {
-    cluster_secondary_range_name  = var.pods_secondary_range_name
-    services_secondary_range_name = var.services_secondary_range_name
+    cluster_secondary_range_name  = local.pods_range_name
+    services_secondary_range_name = local.services_range_name
   }
 
   workload_identity_config {
-    workload_pool = "${local.effective_project_id}.svc.id.goog"
+    workload_pool = "${google_project.demo.project_id}.svc.id.goog"
   }
 
   remove_default_node_pool = true
   initial_node_count       = 1
+
+  node_config {
+    # Must match the cluster’s stored default-pool shape or plan wants an in-place update.
+    machine_type = local.node_machine_type
+    disk_size_gb = local.node_disk_size_gb
+    disk_type    = local.node_disk_type
+
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+  }
 
   depends_on = [google_project_service.required]
 }
 
 resource "google_container_node_pool" "primary" {
   name       = "primary-pool"
-  project    = local.effective_project_id
+  project    = google_project.demo.project_id
   cluster    = google_container_cluster.demo.name
-  location   = var.region
-  node_count = var.node_count_min
+  location   = local.region
+  node_count = local.node_count_min
 
   autoscaling {
-    min_node_count = var.node_count_min
-    max_node_count = var.node_count_max
+    min_node_count = local.node_count_min
+    max_node_count = local.node_count_max
   }
 
   management {
@@ -111,8 +127,9 @@ resource "google_container_node_pool" "primary" {
   }
 
   node_config {
-    machine_type = var.node_machine_type
-    disk_size_gb = var.node_disk_size_gb
+    machine_type = local.node_machine_type
+    disk_size_gb = local.node_disk_size_gb
+    disk_type    = local.node_disk_type
 
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"

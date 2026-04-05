@@ -26,8 +26,8 @@ This document captures the cloud assumptions for the demo instance on Google Clo
 
 ## Required inputs before first apply
 
-- GCP billing account ID
-- GCP project ID and display name
-- GCP region
+- GCP billing account ID (existing; OpenTofu links the **new** project to it)
+- Desired GCP project ID and display name for the project this stack **creates** (`terraform.tfvars`)
+- Region and node sizing: defaults in `infra/gcp/terraform/main.tf` locals (override there if needed)
 - Domain registrar API strategy (manual DNS records vs API automation)
 - GitHub org/repo names and admin access

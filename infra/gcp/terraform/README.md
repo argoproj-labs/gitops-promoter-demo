@@ -30,7 +30,7 @@ gcloud auth application-default login
 
 `cp ./infra/gcp/terraform/terraform.tfvars.example ./infra/gcp/terraform/terraform.tfvars`
 
-3. Edit `infra/gcp/terraform/terraform.tfvars` values.
+3. Edit `infra/gcp/terraform/terraform.tfvars` (`project_id`, `project_name`, `billing_account` only). Region, VPC layout, and node sizing are **`locals`** at the top of `main.tf`. To create the project under a GCP org/folder, add `org_id` / `folder_id` to the `google_project` resource there.
 4. Initialize and apply (OpenTofu):
 
 ```bash

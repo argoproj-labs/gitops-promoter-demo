@@ -11,7 +11,7 @@ terraform {
 }
 
 provider "google" {
-  region = var.region
+  region = local.region
 }
 
 

@@ -7,7 +7,7 @@ Use this file to pin environment-specific values before provisioning.
 - `PROJECT_ID`: Google Cloud project ID for the demo
 - `PROJECT_NAME`: display name for the project
 - `BILLING_ACCOUNT`: billing account ID to link to the project
-- `REGION`: GKE region, for example `us-central1`
+- `REGION`: defaults to `us-central1` in `infra/gcp/terraform/main.tf` locals (change there if needed)
 - `CLUSTER_NAME`: for example `gitops-promoter-demo`
 - `BASE_DOMAIN`: `gitops-promoter.dev`
 

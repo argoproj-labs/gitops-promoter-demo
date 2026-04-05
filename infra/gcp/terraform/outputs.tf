@@ -1,6 +1,6 @@
 output "project_id" {
   description = "Target GCP project ID"
-  value       = local.effective_project_id
+  value       = google_project.demo.project_id
 }
 
 output "cluster_name" {
@@ -20,5 +20,5 @@ output "vpc_network" {
 
 output "gke_workload_identity_pool" {
   description = "Workload Identity pool for this cluster"
-  value       = "${local.effective_project_id}.svc.id.goog"
+  value       = "${google_project.demo.project_id}.svc.id.goog"
 }
