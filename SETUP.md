@@ -51,7 +51,7 @@ Overview: [README.md — Repository layout](README.md#repository-layout-short). 
 - Argo CD applications use **single-source** `spec.source`, not multi-source apps, **except** the guestbook env **`Application`**s, which use **`spec.sourceHydrator`** so GitOps Promoter can gate on hydrated branches ([source hydrator](https://argo-cd.readthedocs.io/en/stable/user-guide/source-hydrator/)).
 - **`Application/root-app`** and every child app rendered from **`charts/apps`** use **automated** sync with **`prune: true`** and **`selfHeal: true`**.
 - Helm deployments come from **in-repo umbrella charts**.
-- Environment-specific values should live in ignored local files such as `terraform.tfvars`, not in committed source.
+- OpenTofu inputs for GCP live in **`infra/gcp/terraform/terraform.tfvars`** (committed in this demo repo; forks should replace `project_id`, `project_name`, and `billing_account` with their own values).
 - **GitOps first:** change the cluster by committing to this repository and letting Argo CD sync. Avoid `kubectl apply`, `kubectl patch`, or ad-hoc edits to workloads except in a real break-glass situation (for example, Argo CD cannot reconcile and you need a one-time repair).
 - **After any break-glass change:** update the matching manifests or Helm values here and push **before** you consider the incident closed, so the next sync does not fight the cluster or reintroduce the failure.
 - **Bootstrap exception:** the very first Argo CD install still uses a one-time `helm template` | `kubectl apply` from `charts/argocd` (see [§7](#7-bootstrap-argo-cd-once)); everything after that should flow from Git. One-off cluster repairs are covered in [DEBUGGING.md](DEBUGGING.md).
@@ -151,11 +151,7 @@ Use this flow when the demo lives under a **new Gmail** (or any identity) that s
 
 ## 4. Prepare variables (`terraform.tfvars`)
 
-Copy the example file and edit it for your environment.
-
-```bash
-cp infra/gcp/terraform/terraform.tfvars.example infra/gcp/terraform/terraform.tfvars
-```
+Edit **`infra/gcp/terraform/terraform.tfvars`** in the repository (or copy from `terraform.tfvars.example` if you are starting a new fork without the checked-in file).
 
 Pick a **globally unique** `project_id` (6–30 characters; lowercase letters, digits, hyphens). It must **not** reuse an old demo project id from another account.
 
@@ -654,7 +650,7 @@ Update the dependency versions in the umbrella chart `Chart.yaml` files when you
 
 ## Notes
 
-- `infra/gcp/terraform/terraform.tfvars` is intentionally ignored and should stay local.
+- `infra/gcp/terraform/terraform.tfvars` holds OpenTofu inputs for this demo; replace values when you fork or reuse the stack elsewhere.
 - `.terraform.lock.hcl` is safe to commit and helps keep provider resolution reproducible (regenerate with `tofu init` or `terraform init` after provider bumps).
 - The root app must point at a repository/branch that already contains the committed bootstrap manifests.
 - Transient **Unknown** sync status or other oddities: [DEBUGGING.md](DEBUGGING.md#argo-cd-sync-status-unknown).

@@ -8,7 +8,6 @@
 **/*.tfstate.*
 **/.terraform.tfstate.lock.info
 **/crash.log
-**/*.tfvars
 **/*tfplan*
 
 # Helm dependency packages (rebuild with helm dependency build)
