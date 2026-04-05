@@ -1,0 +1,18 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: argocd-dex-github
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+spec:
+  encryptedData:
+    clientId: AgDNpo0AfGx1SP0Su8PuYQa/bOxFNe0LwQOHSAv1m236QQsmDQRDs+Ruso0zB1g894DEYJjL/+e2h0SeqeV4El4YmjVG+/5byo4fymeGDTqZEIX/+Uuvu/0cuz5usF6DjimsIgT/Avvm/ns3UsE2Yxjcm6vNlZEgau+yiRPdy1KWiTWLQIMwuI6WeHHYnW6lbvXRR0rNivvai7ViCBom94LmdAp59UcMwozYDnuf5ynoiLKlDCqwBOI3naDvj2NABxjHWp6ww1RRMvMSjIgX2GgwSJoGpCggE375tHNpXW9ARxjWIOSEENm1g+WcQtho6mpiTjzO5sVB6G+pV4U4hZgzhi+Dn42w4NaYvUdSoacAizGKTCxpD9OQdr9a/vlcaZ2nkOCxCREt8QgB9p5dS+LZZMssVKG25B32ns054Vo0YjvqHQ0+qJQlzbPQ72R0TLqO95hrhOxiMIKTMKRNsqAEzx36l2HC811vNhCftggGn3ynuoFXdDHrv65GERcShghSoUXUyD20P3A1A6xvzaxGm9oufKxHMZugRxDBodiNCt1NMLW+Piz8c7IlhtmEK+oid1TzYXA3ep+dKjD2MW1jC4gO28W97ZoPrahBpB7yu9+J3F2gOTbERy/pPNvwhcxxpIbbR7Ysxb0pnuCBprSc0Wvzl/OKE+lCokYOPI7xxjLR7maMco5Mzdmu1fBCXDq81qyHvLuq8bRkydxoKql4xRDidQ==
+    clientSecret: AgCNQWeCQfwne92pOdbXzPlPciy5SYWzwe5fVeJd2RefeT4xHaAyqSbtmkr/QagzCwGBoxblKSNFqPjRbze6OqmF/VAJ2mCEBI0bqdbSCyFf0YB3qksVLIlKZgRTgutkz4GBao+Y3JyAqKcy+wj7iBx4NOaJA+2utLp8jIC6ndVStH6x49H+6jLLKzVUPKnJhfdiPz3YSurjerGCVhbViJxCyqDLrRp6qYOSXm3UEJEDJRqT9VOCUiRVveROJYDoyDfeGj8s/EErLjUhmH3BMfywPvdJbhF+oFxRHYEGJk4ELHs8BhFtFzW7h4HNqWhClpUctAKcznBG2O/ZZv8bmCtjyNUV1+Sy/0R/CdjhTP209OPYVP7x11Z08DTGUDSD7GPhRUBhGwUb0e8d9EOzZjK+0TL2ept605vMKNGpekRDM9hYGOBtJozz930aqi+SJnRwz+8KcKgELVPtOlHGxx+BTGaxoosy5joP7GN/vdILN9eZtYFXJW4XmiIYz5OY++OpKHzffBFS4oRwmNXyRcXaVvj370/7koQG99jOV1HkZDR2bG48f73l4FmcTjKJoZMpMknp4n5BftuVtOhcGGyaDju/yPuoHPklZEncy9ROi1rj/7g7jZiDQLVg83a0npYGmFOWD9Q9PURs4DWE7XJjMaieCgef02/rr5X0FnF8vnTqXValrSe9Eqn5sEFhpNbLWimNx+eN7rLJeoVJu2bSun6DE0HDdfrOJdUwPr7NyUT5elqVUnUb
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: argocd
+      name: argocd-dex-github
+      namespace: argocd

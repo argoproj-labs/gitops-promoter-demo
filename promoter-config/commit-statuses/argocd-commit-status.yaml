@@ -1,0 +1,17 @@
+# One ArgoCDCommitStatus aggregates every Argo CD Application that participates in this
+# PromotionStrategy. The controller maps each Application to an environment from
+# spec.sourceHydrator.syncSource.targetBranch (hydrated apps) — see
+# https://gitops-promoter.readthedocs.io/en/latest/commit-status-controllers/argocd/
+#
+# CommitStatus resources emitted for this CR always use key: argocd-health (not the metadata.name).
+apiVersion: promoter.argoproj.io/v1alpha1
+kind: ArgoCDCommitStatus
+metadata:
+  name: demo-argocd-health
+  namespace: gitops-promoter
+spec:
+  promotionStrategyRef:
+    name: demo
+  applicationSelector:
+    matchLabels:
+      app.kubernetes.io/name: guestbook

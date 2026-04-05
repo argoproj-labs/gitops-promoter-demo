@@ -1,0 +1,11 @@
+apiVersion: v2
+name: cert-manager-umbrella
+description: Umbrella chart for cert-manager
+type: application
+version: 0.1.0
+
+dependencies:
+  - name: cert-manager
+    version: 1.20.1
+    repository: https://charts.jetstack.io
+

@@ -1,0 +1,4 @@
+# Git repository URL used as spec.source.repoURL (and sourceHydrator.drySource.repoURL)
+# on every child Application. Keep apps/root-app.yaml spec.source.repoURL identical so
+# Argo CD clones the same repo that these Applications reference.
+repoURL: https://github.com/crenshaw-dev/gitops-promoter-demo

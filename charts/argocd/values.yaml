@@ -1,0 +1,86 @@
+argo-cd:
+  global:
+    domain: demo.gitops-promoter.dev
+
+  # Source hydrator (alpha): renders dry manifests and pushes to Git; required for GitOps Promoter’s
+  # Argo CD integration. See https://argo-cd.readthedocs.io/en/stable/user-guide/source-hydrator/
+  commitServer:
+    enabled: true
+
+  server:
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      hostname: demo.gitops-promoter.dev
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+        nginx.ingress.kubernetes.io/backend-protocol: HTTP
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      tls: true
+    # GitOps Promoter UI extension (https://gitops-promoter.readthedocs.io/en/latest/argocd-integrations/)
+    initContainers:
+      - name: extension-gitops-promoter
+        image: quay.io/argoprojlabs/argocd-extension-installer:v0.0.9@sha256:d2b43c18ac1401f579f6d27878f45e253d1e3f30287471ae74e6a4315ceb0611
+        env:
+          - name: EXTENSION_NAME
+            value: gitops-promoter
+          - name: EXTENSION_URL
+            value: https://github.com/argoproj-labs/gitops-promoter/releases/download/v0.25.1/gitops-promoter-argocd-extension.tar.gz
+          - name: EXTENSION_CHECKSUM_URL
+            value: https://github.com/argoproj-labs/gitops-promoter/releases/download/v0.25.1/gitops-promoter_0.25.1_checksums.txt
+        volumeMounts:
+          - name: extensions
+            mountPath: /tmp/extensions/
+        securityContext:
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+    volumeMounts:
+      - name: extensions
+        mountPath: /tmp/extensions/
+    volumes:
+      - name: extensions
+        emptyDir: {}
+
+  configs:
+    # GitHub webhook HMAC: indirection only (safe in Git). Argo CD reads the literal
+    # "$<secret>:<key>" from argocd-secret and resolves the value from that Secret at runtime.
+    # Target Secret: seal and commit charts/argocd/templates/argocd-github-webhook.sealed.yaml
+    # (same Argo CD Application as the argocd umbrella chart).
+    secret:
+      githubSecret: "$argocd-github-webhook:githubWebhookSecret"
+    params:
+      server.disable.auth: "false"
+      server.insecure: "true"
+      # Enables hydrator controller + commit server wiring in argo-helm (restart app controller / API server on change).
+      hydrator.enabled: "true"
+    rbac:
+      policy.default: role:readonly
+      # Group claim is org:team per Dex default (GitHub team name). Must match token groups.
+      policy.csv: |
+        g, argoproj-labs:gitops-promoter-approvers, role:admin
+    cm:
+      url: https://demo.gitops-promoter.dev
+      # Embedded Dex → GitHub (same shape as upstream Argo CD demo; client ID/secret in Secret/argocd-dex-github).
+      # https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#configuring-github-oauth2
+      dex.config: |
+        connectors:
+        - type: github
+          id: github
+          name: GitHub
+          config:
+            clientID: $argocd-dex-github:clientId
+            clientSecret: $argocd-dex-github:clientSecret
+            orgs:
+            - name: argoproj-labs
+              teams:
+              - gitops-promoter-approvers
+      resource.customLabels: promoter.argoproj.io/commit-status
+      resource.links: |
+        - url: '{{.resource.status.url}}'
+          title: Pull Request
+          icon.class: fa-code-pull-request
+          if: resource.apiVersion == "promoter.argoproj.io/v1alpha1" && resource.kind == "PullRequest" && resource.status.url != nil && resource.status.url != ""
+        - url: '{{.resource.status.pullRequest.url}}'
+          title: Pull Request
+          icon.class: fa-code-pull-request
+          if: resource.apiVersion == "promoter.argoproj.io/v1alpha1" && resource.kind == "ChangeTransferPolicy" && resource.status.pullRequest != nil && resource.status.pullRequest.url != nil && resource.status.pullRequest.url != ""

@@ -1,0 +1,21 @@
+apiVersion: promoter.argoproj.io/v1alpha1
+kind: PromotionStrategy
+metadata:
+  name: demo
+  namespace: gitops-promoter
+spec:
+  gitRepositoryRef:
+    name: demo-config
+  # Keys must match controllers: ArgoCDCommitStatus → argocd-health; TimedCommitStatus → timer
+  # (see https://gitops-promoter.readthedocs.io/en/latest/gating-promotions/).
+  activeCommitStatuses:
+    - key: argocd-health
+    - key: timer
+  environments:
+    - branch: env/dev
+      autoMerge: true
+    - branch: env/e2e
+      autoMerge: true
+    - branch: env/prd
+      autoMerge: true
+

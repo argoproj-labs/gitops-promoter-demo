@@ -1,0 +1,15 @@
+create_project   = true
+project_id       = "gitops-promoter-demo-123456"
+project_name     = "gitops-promoter-demo"
+billing_account  = "000000-000000-000000"
+
+# Leave null if your account is not using an org/folder hierarchy.
+org_id    = null
+folder_id = null
+
+region       = "us-central1"
+cluster_name = "gitops-promoter-demo"
+
+node_machine_type = "e2-standard-4"
+node_count_min    = 3
+node_count_max    = 6

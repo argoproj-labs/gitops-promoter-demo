@@ -1,0 +1,11 @@
+apiVersion: v2
+name: sealed-secrets-umbrella
+description: Umbrella chart for Bitnami Sealed Secrets
+type: application
+version: 0.1.0
+
+dependencies:
+  - name: sealed-secrets
+    version: 2.18.4
+    repository: https://bitnami-labs.github.io/sealed-secrets
+

@@ -1,0 +1,97 @@
+# Edit Grafana hostname (3 places below should stay in sync): ingress.hosts, ingress.tls, grafana.ini.server.root_url
+kube-prometheus-stack:
+  fullnameOverride: ""
+
+  defaultRules:
+    create: true
+
+  prometheus:
+    enabled: true
+    prometheusSpec:
+      # Default kube-prometheus-stack behavior maps `serviceMonitorSelector: {}` to `release: <helm release>` only,
+      # so ServiceMonitors from other releases (e.g. gitops-promoter) are ignored. Empty selector + false here
+      # means "discover all ServiceMonitors" in namespaces allowed by serviceMonitorNamespaceSelector ({} = all).
+      serviceMonitorSelectorNilUsesHelmValues: false
+      serviceMonitorSelector: {}
+      retention: 15d
+      scrapeInterval: 30s
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+
+  alertmanager:
+    enabled: true
+    alertmanagerSpec:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+
+  grafana:
+    enabled: true
+    # No local admin user or Secret: avoids per-render random admin-password (GitOps drift) and matches OAuth-only access.
+    env:
+      GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION: "true"
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+        nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      hosts:
+        - grafana.gitops-promoter.dev
+      tls:
+        - secretName: grafana-tls
+          hosts:
+            - grafana.gitops-promoter.dev
+
+    # GitHub OAuth: separate OAuth app from Argo Dex (one callback URL per app); see SETUP.md §10.1 / DEBUGGING.md.
+    # Secret/grafana-github-oauth is required;
+    # Grafana pods stay Pending until the SealedSecret is synced and unsealed.
+    envValueFrom:
+      GF_AUTH_GITHUB_CLIENT_ID:
+        secretKeyRef:
+          name: grafana-github-oauth
+          key: clientId
+      GF_AUTH_GITHUB_CLIENT_SECRET:
+        secretKeyRef:
+          name: grafana-github-oauth
+          key: clientSecret
+
+    grafana.ini:
+      server:
+        root_url: https://grafana.gitops-promoter.dev
+      auth:
+        disable_login_form: true
+      auth.basic:
+        enabled: false
+      auth.github:
+        enabled: true
+        allow_sign_up: true
+        scopes: user:email,read:org
+        # Same org gate as charts/argocd/values.yaml Dex config; adjust if you fork.
+        allowed_organizations: argoproj-labs
+        # Match Argo CD Dex group argoproj-labs:gitops-promoter-approvers → Grafana org Editor (dashboard write).
+        role_attribute_path: "contains(groups[*], '@argoproj-labs/gitops-promoter-approvers') && 'Editor' || 'Viewer'"
+      users:
+        auto_assign_org_role: Viewer
+
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        searchNamespace: ALL
+
+  prometheusOperator:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+  kubeStateMetrics:
+    enabled: true
+
+  nodeExporter:
+    enabled: true

@@ -1,0 +1,21 @@
+.idea
+.idea/
+**/.idea/
+
+# Terraform local artifacts
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/.terraform.tfstate.lock.info
+**/crash.log
+**/*.tfvars
+**/*tfplan*
+
+# Helm dependency packages (rebuild with helm dependency build)
+charts/**/charts/*.tgz
+
+# Local Helm cache (optional HELM_CACHE_HOME)
+.helm-cache/
+
+# GitHub App PEMs for GitOps Promoter — seal into charts/gitops-promoter/templates/; never commit plaintext
+promoter-config/**/*.pem

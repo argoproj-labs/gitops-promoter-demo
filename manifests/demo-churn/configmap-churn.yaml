@@ -1,0 +1,165 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-churn-script
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: argocd
+data:
+  churn.py: |
+    #!/usr/bin/env python3
+    """Push a trivial commit to the default branch using a GitHub App installation token."""
+    from __future__ import annotations
+
+    import base64
+    import json
+    import os
+    import re
+    import sys
+    import time
+    from datetime import datetime, timezone
+    from pathlib import Path
+    from urllib.parse import quote
+
+    import jwt
+    import requests
+
+    API = "https://api.github.com"
+    API_VER = "2022-11-28"
+    FILE_PATH = os.environ.get("CHURN_FILE_PATH", "demo-apps/guestbook/values.yaml")
+    BRANCH = os.environ.get("GITHUB_DEFAULT_BRANCH", "main")
+    PEM_PATH = os.environ.get("GITHUB_APP_PRIVATE_KEY_PATH", "/etc/github-app/githubAppPrivateKey")
+
+
+    def gh_headers(token: str | None = None, *, jwt_token: str | None = None) -> dict[str, str]:
+        h = {
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": API_VER,
+            "User-Agent": "gitops-promoter-demo-churn",
+        }
+        if token:
+            h["Authorization"] = f"Bearer {token}"
+        elif jwt_token:
+            h["Authorization"] = f"Bearer {jwt_token}"
+        return h
+
+
+    def app_jwt(app_id: str, pem: str) -> str:
+        now = int(time.time())
+        return jwt.encode(
+            {"iat": now - 60, "exp": now + 600, "iss": app_id},
+            pem,
+            algorithm="RS256",
+        )
+
+
+    def installation_token(jwt_token: str, installation_id: str) -> str:
+        r = requests.post(
+            f"{API}/app/installations/{installation_id}/access_tokens",
+            headers=gh_headers(jwt_token=jwt_token),
+            timeout=60,
+        )
+        r.raise_for_status()
+        return r.json()["token"]
+
+
+    def discover_installation(jwt_token: str, owner: str, repo: str) -> str:
+        r = requests.get(
+            f"{API}/app/installations",
+            headers=gh_headers(jwt_token=jwt_token),
+            params={"per_page": 100},
+            timeout=60,
+        )
+        r.raise_for_status()
+        target = f"{owner}/{repo}".lower()
+        for inst in r.json():
+            iid = str(inst["id"])
+            tok = installation_token(jwt_token, iid)
+            rr = requests.get(
+                f"{API}/installation/repositories",
+                headers=gh_headers(token=tok),
+                params={"per_page": 100},
+                timeout=60,
+            )
+            rr.raise_for_status()
+            for row in rr.json().get("repositories", []):
+                if row.get("full_name", "").lower() == target:
+                    return iid
+        print("No installation found with access to", target, file=sys.stderr)
+        sys.exit(1)
+
+
+    def bump_demo_churn_timestamp(yaml_text: str, iso: str) -> str:
+        """Replace demoChurn.lastBumped in shared guestbook values (one match required)."""
+        # Use \\g<n> — not \\1{iso}\\2. Digits after \\1 are parsed as octal (\\120 → 'P'), corrupting timestamps.
+        new_text, n = re.subn(
+            r'(lastBumped:\s*")[^"]*(")',
+            rf"\g<1>{iso}\g<2>",
+            yaml_text,
+            count=1,
+        )
+        if n != 1:
+            raise ValueError(
+                f"expected exactly one lastBumped string in {FILE_PATH!r} for demo churn bump"
+            )
+        return new_text
+
+
+    def parse_repo_url(url: str) -> tuple[str, str]:
+        # https://github.com/owner/name or https://github.com/owner/name.git
+        u = url.rstrip("/").removesuffix(".git")
+        parts = u.split("/")
+        if len(parts) < 2:
+            raise ValueError(f"cannot parse owner/repo from {url!r}")
+        return parts[-2], parts[-1]
+
+
+    def main() -> None:
+        app_id = os.environ["GITHUB_APP_ID"]
+        repo_url = os.environ["GITHUB_REPO_URL"]
+        owner, repo = parse_repo_url(repo_url)
+        pem = Path(PEM_PATH).read_text()
+        jwt_token = app_jwt(app_id, pem)
+
+        inst = os.environ.get("GITHUB_INSTALLATION_ID")
+        if not inst:
+            inst = discover_installation(jwt_token, owner, repo)
+        token = installation_token(jwt_token, inst)
+
+        iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        path_q = quote(FILE_PATH, safe="/")
+        url = f"{API}/repos/{owner}/{repo}/contents/{path_q}"
+
+        headers = gh_headers(token=token)
+        r = requests.get(f"{url}?ref={BRANCH}", headers=headers, timeout=60)
+        if r.status_code == 404:
+            print("Repository path not found:", FILE_PATH, file=sys.stderr)
+            sys.exit(1)
+        r.raise_for_status()
+        blob = r.json()
+        raw = base64.b64decode(blob["content"].replace("\n", "")).decode()
+        new_text = bump_demo_churn_timestamp(raw, iso)
+        if new_text == raw:
+            print("No lastBumped change; skipping commit")
+            return
+
+        content_b64 = base64.b64encode(new_text.encode()).decode()
+        payload = {
+            "message": f"chore: promoter demo churn {iso}",
+            "content": content_b64,
+            "branch": BRANCH,
+            "sha": blob["sha"],
+        }
+
+        put = requests.put(url, headers=headers, data=json.dumps(payload), timeout=60)
+        put.raise_for_status()
+        print("Committed", put.json().get("commit", {}).get("sha", "?"), "on", BRANCH)
+
+
+    if __name__ == "__main__":
+        try:
+            main()
+        except (requests.HTTPError, ValueError, OSError) as e:
+            print(e, file=sys.stderr)
+            sys.exit(1)

@@ -1,0 +1,11 @@
+apiVersion: v2
+name: gitops-promoter-umbrella
+description: Umbrella chart for GitOps Promoter demo deployment
+type: application
+version: 0.1.0
+
+dependencies:
+  - name: gitops-promoter
+    version: 0.5.1
+    repository: https://argoproj-labs.github.io/gitops-promoter-helm/
+

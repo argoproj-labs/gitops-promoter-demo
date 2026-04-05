@@ -1,0 +1,27 @@
+{{- if .Values.controllerMetricsServiceMonitor.enabled }}
+# Upstream gitops-promoter Helm chart 0.5.1 ships a ServiceMonitor that selects
+# app.kubernetes.io/name=gitops-promoter, but the metrics Service is labeled
+# app.kubernetes.io/name=service. Prometheus then drops every target for that job.
+# This ServiceMonitor matches the actual Service (see templates/metrics/controller-manager-metrics-service.yaml in upstream).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gitops-promoter-controller-metrics-monitor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: gitops-promoter
+    app.kubernetes.io/part-of: gitops-promoter-umbrella
+spec:
+  endpoints:
+    - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      path: /metrics
+      port: https
+      scheme: https
+      tlsConfig:
+        insecureSkipVerify: true
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: service
+      app.kubernetes.io/part-of: promoter
+      control-plane: controller-manager
+{{- end }}

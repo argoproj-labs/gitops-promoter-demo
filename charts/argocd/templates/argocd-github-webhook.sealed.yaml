@@ -1,0 +1,17 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: argocd-github-webhook
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+spec:
+  encryptedData:
+    githubWebhookSecret: AgBkStOnLBgjGvZ9mRrp9UiOlrftm4rTlZnudabJdYKfFHcnruHavg903vvB/LBuZqD8nbu3wFJh6wMMHBSCidu1JYwH6V7vuxdZNWp8ckqdP8AEx/MuLEPwhip2eRq+yUj4qwW/cnT6OnS2hjx8BqJBf3PZsc/hikvZafvt6SVUdbFIiI6FKwQXhKJiKcxXDFORWu7wgKkS4u1gwvp2cN5BvvNmWA0TIWXrarZ5WwbsqZYmvVCDxfFptNmVaRxRTWanWG1v7yAGW2F8ps0aciseOHgq1lABuT5mJE6MwAKQAfOeU8dSj7CfVkFmgXm+LiY70Xh9cZO9Gil2kjl1Jqi0gVKr1iG7964RK2Fr024mZT6OAUaujmAVhlYpKGlvuglVQ80lpWKsqW8TCqtkEgb232KwQvYNfKVQ+GomH5hmA1CIeRRSIu3l1WM6SVOzkSwxvi5WK12wDFP3XlyWF58A9DD1IoMOq1KXKfrNxa3Vc7eFZlBP9L/AslqCag8CMMZkTa2kKLa2VaJoSoiv0CfRo2GrF4sFJLx+B6l9Pat7Y1n0lW8UxLzgQp/3p3RsHSBIY5bft19gH4AVquTxXXb4WnI3efZirIAhFsdJ+vf319xA3fh6JIZ2qkuGEzqKOPBJ8abLOOVYWLo2ZHVwAY4Y1Sh5ZoVd/6NlavAdNFcdl2sT7e0eQi0ma5fCvBr4KUVlc56xGiRIYs1230w1NJfukz27Au4KilIyJwmhdfqOymb0AwpYXiS/qkiEeg==
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: argocd
+      name: argocd-github-webhook
+      namespace: argocd

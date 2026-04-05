@@ -1,0 +1,11 @@
+ingress-nginx:
+  controller:
+    service:
+      externalTrafficPolicy: Local
+    # Let cert-manager inject CA into the admission ValidatingWebhookConfiguration.
+    # Without this, the webhook can end up with an empty clientConfig.caBundle (patch
+    # job race or SSA drift), and Ingress creates fail with TLS verify errors.
+    admissionWebhooks:
+      certManager:
+        enabled: true
+

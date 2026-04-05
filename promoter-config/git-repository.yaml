@@ -1,0 +1,12 @@
+apiVersion: promoter.argoproj.io/v1alpha1
+kind: GitRepository
+metadata:
+  name: demo-config
+  namespace: gitops-promoter
+spec:
+  github:
+    owner: crenshaw-dev
+    name: gitops-promoter-demo
+  scmProviderRef:
+    kind: ScmProvider
+    name: demo-scm

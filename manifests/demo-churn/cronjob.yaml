@@ -1,0 +1,86 @@
+# Pushes trivial commits to the bootstrap repo using the same GitHub App write Secret as the Argo CD source hydrator.
+# Requires Secret/argocd-repo-gitops-promoter-write (see SETUP.md §8).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: demo-churn
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: demo-churn
+    app.kubernetes.io/part-of: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  # Every 15 minutes; adjust as needed.
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 7200
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: demo-churn
+        spec:
+          serviceAccountName: demo-churn
+          restartPolicy: OnFailure
+          volumes:
+            - name: script
+              configMap:
+                name: demo-churn-script
+                defaultMode: 0755
+            - name: github-app-key
+              secret:
+                secretName: argocd-repo-gitops-promoter-write
+                items:
+                  - key: githubAppPrivateKey
+                    path: githubAppPrivateKey
+          containers:
+            - name: churn
+              image: python:3.12-slim-bookworm
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  pip install --no-cache-dir --disable-pip-version-check \
+                    "pyjwt[crypto]==2.9.0" "requests==2.32.3"
+                  exec python /scripts/churn.py
+              env:
+                - name: GITHUB_APP_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: argocd-repo-gitops-promoter-write
+                      key: githubAppID
+                - name: GITHUB_REPO_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: argocd-repo-gitops-promoter-write
+                      key: url
+                - name: GITHUB_INSTALLATION_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: argocd-repo-gitops-promoter-write
+                      key: githubAppInstallationID
+                      optional: true
+                # Must match the default branch GitHub uses for the repo (main vs master).
+                - name: GITHUB_DEFAULT_BRANCH
+                  value: main
+                - name: CHURN_FILE_PATH
+                  value: demo-apps/guestbook/values.yaml
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+                  readOnly: true
+                - name: github-app-key
+                  mountPath: /etc/github-app
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  memory: 384Mi

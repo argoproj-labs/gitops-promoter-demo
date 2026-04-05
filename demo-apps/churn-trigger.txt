@@ -1,0 +1,3 @@
+# Updated by the in-cluster demo-churn CronJob (GitHub Contents API).
+# Safe to commit; Argo CD guestbook dry source ignores this file for Helm.
+last-push: 2026-04-05T18:00:13Z

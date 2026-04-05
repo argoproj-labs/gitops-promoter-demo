@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "automerge": true,
+  "automergeType": "pr",
+  "packageRules": [
+    {
+      "matchManagers": ["helmv3"],
+      "matchPackageNames": ["gitops-promoter", "argo-cd", "kube-prometheus-stack"],
+      "automerge": true
+    },
+    {
+      "matchManagers": ["kubernetes"],
+      "matchPackageNames": ["alpine/git", "alpine"],
+      "automerge": true
+    }
+  ]
+}
+
