@@ -5,7 +5,7 @@ metadata:
   namespace: gitops-promoter
 spec:
   github:
-    owner: crenshaw-dev
+    owner: argoproj-labs
     name: gitops-promoter-demo
   scmProviderRef:
     kind: ScmProvider

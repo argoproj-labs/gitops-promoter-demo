@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     # Clone URL for this repository; must match charts/apps/values.yaml (repoURL).
-    repoURL: https://github.com/crenshaw-dev/gitops-promoter-demo
+    repoURL: https://github.com/argoproj-labs/gitops-promoter-demo
     targetRevision: HEAD
     path: charts/apps
   destination:

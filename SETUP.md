@@ -557,7 +557,7 @@ Official reference: [GitOps Promoter getting started](https://gitops-promoter.re
 
 ### 12.2 Repository and branches
 
-1. Use the GitHub repo named in **`promoter-config/git-repository.yaml`** (this demo: **`crenshaw-dev/gitops-promoter-demo`** — change **`owner`** / **`name`** if you fork under a different path).
+1. Use the GitHub repo named in **`promoter-config/git-repository.yaml`** (this demo: **`argoproj-labs/gitops-promoter-demo`** — change **`owner`** / **`name`** if you fork under a different path).
 2. **`promotion-strategy.yaml`** expects merge targets **`env/dev`**, **`env/e2e`**, and **`env/prd`**. Your hydrator / promotion flow must match the [branch conventions](https://gitops-promoter.readthedocs.io/en/latest/getting-started/#promotion-strategy) the project documents (including **`env/<env>-next`** hydration branches). Align branch names here with what you actually create in Git.
 
 ### 12.3 Seal the GitHub App private key (same Application as promoter CRs)
