@@ -1,3 +1,4 @@
+# OpenTofu (tofu) and HashiCorp Terraform both honor this block.
 terraform {
   required_version = ">= 1.6.0"
 

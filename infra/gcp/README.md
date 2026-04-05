@@ -13,7 +13,7 @@ Use this file to pin environment-specific values before provisioning.
 
 ## DNS model
 
-- DNS stays with your DNS provider (Terraform does not create a Cloud DNS zone in this demo).
+- DNS stays with your DNS provider (the OpenTofu/Terraform stack does not create a Cloud DNS zone in this demo).
 - After `ingress-nginx` has an external IP, print the address to use for A records:
 
   ```bash
@@ -41,7 +41,7 @@ Enable APIs at minimum:
 
 ## Bootstrap checks
 
-Before first `terraform apply`, verify:
+Before first `tofu apply` (or `terraform apply`), verify:
 
 1. `gcloud auth list` shows your account.
 2. `gcloud beta billing accounts list` returns the target billing account.
@@ -50,5 +50,5 @@ Before first `terraform apply`, verify:
 
 ## Notes
 
-- Terraform files live in `infra/gcp/terraform`.
+- OpenTofu/Terraform files live in `infra/gcp/terraform`.
 - Start with regional GKE for higher availability, then downscale later if needed.

@@ -1,5 +1,5 @@
 variable "create_project" {
-  description = "Whether Terraform should create the GCP project. Set false to use an existing project_id."
+  description = "Whether this stack should create the GCP project. Set false to use an existing project_id."
   type        = bool
   default     = true
 }

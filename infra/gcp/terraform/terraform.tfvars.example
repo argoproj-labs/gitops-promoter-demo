@@ -1,3 +1,4 @@
+# Copy to terraform.tfvars (gitignored). Apply with: tofu init && tofu plan -out tfplan && tofu apply tfplan
 create_project   = true
 project_id       = "gitops-promoter-demo-123456"
 project_name     = "gitops-promoter-demo"

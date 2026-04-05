@@ -9,11 +9,14 @@ else
   echo "gcloud: NOT FOUND"
 fi
 
-if command -v terraform >/dev/null 2>&1; then
-  echo "terraform: OK ($(command -v terraform))"
+if command -v tofu >/dev/null 2>&1; then
+  echo "OpenTofu: OK ($(command -v tofu))"
+  tofu version | head -n 1
+elif command -v terraform >/dev/null 2>&1; then
+  echo "terraform: OK ($(command -v terraform)) (OpenTofu not found; tofu recommended)"
   terraform version | head -n 1
 else
-  echo "terraform: NOT FOUND"
+  echo "OpenTofu/Terraform: NOT FOUND (install OpenTofu: https://opentofu.org/docs/intro/install/ )"
 fi
 
 echo

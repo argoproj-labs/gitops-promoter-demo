@@ -1,6 +1,6 @@
-# Terraform: GCP Project + Regional GKE
+# OpenTofu / Terraform: GCP project + regional GKE
 
-This Terraform stack creates a dedicated GCP project and a regional GKE cluster for the demo.
+This stack creates a dedicated GCP project and a regional GKE cluster for the demo. Configuration is standard HCL; use the **[OpenTofu](https://opentofu.org/)** CLI (`tofu`) or **HashiCorp Terraform** 1.6+ (`terraform`) interchangeably.
 
 ## What it creates
 
@@ -13,9 +13,9 @@ This Terraform stack creates a dedicated GCP project and a regional GKE cluster 
 ## Prerequisites
 
 - `gcloud` installed and authenticated
-- Terraform installed
+- OpenTofu (`tofu`) or Terraform 1.6+
 - Permission to create projects and attach billing
-- Application Default Credentials (ADC) initialized for Terraform
+- Application Default Credentials (ADC) initialized for provider operations
 
 ## Usage
 
@@ -31,14 +31,16 @@ gcloud auth application-default login
 `cp ./infra/gcp/terraform/terraform.tfvars.example ./infra/gcp/terraform/terraform.tfvars`
 
 3. Edit `infra/gcp/terraform/terraform.tfvars` values.
-4. Initialize and apply.
+4. Initialize and apply (OpenTofu):
 
 ```bash
 cd ./infra/gcp/terraform
-terraform init
-terraform plan -out tfplan
-terraform apply tfplan
+tofu init
+tofu plan -out tfplan
+tofu apply tfplan
 ```
+
+If you use HashiCorp Terraform, run the same steps with `terraform` instead of `tofu`.
 
 ## After apply
 

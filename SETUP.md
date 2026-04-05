@@ -5,7 +5,7 @@ This guide walks through **first-time** provisioning and configuration. If somet
 The repository bootstraps a demo environment for [GitOps Promoter](https://gitops-promoter.readthedocs.io/) on Google Cloud. It uses:
 
 - **GKE** for Kubernetes
-- **Terraform** for cluster/network provisioning
+- **OpenTofu** (`tofu`) for cluster/network provisioning (same `*.tf` as Terraform; HashiCorp **Terraform** 1.6+ also works if you substitute `terraform` for `tofu`)
 - **Argo CD** with an App-of-Apps pattern
 - **Single-source Argo CD Applications** only
 - **Umbrella Helm charts** stored in this repository
@@ -41,7 +41,7 @@ Overview: [README.md — Repository layout](README.md#repository-layout-short). 
 - `charts/`: umbrella charts and Helm values (each chart may include `Chart.lock` from `helm dependency build`). Argo CD–related **SealedSecret** manifests live in **`charts/argocd/templates/`** (Dex OAuth, Git webhook HMAC, hydrator **repository-write**); GitOps Promoter’s GitHub App PEM is **`charts/gitops-promoter/templates/github-app-credentials.sealed.yaml`**, applied with the **`gitops-promoter`** Application. **`charts/monitoring/`** wraps **[kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack)** (Prometheus Operator, Prometheus, Alertmanager, Grafana) into namespace **`monitoring`** (**`Application/monitoring`**, sync wave **1**).
 - `manifests/`: raw Kubernetes manifests applied by Argo CD (top-level YAML is synced by **`demo-config`** into `gitops-promoter`; **`manifests/demo-churn/`** syncs into **`argocd`** via **`Application/demo-churn`** — CronJob that bumps **`demo-apps/guestbook/values.yaml`** `demoChurn.lastBumped` via the same GitHub App write **`Secret`** as the hydrator)
 - `promoter-config/`: GitOps Promoter CRs applied with **`Application/promoter-config`** into **`gitops-promoter`**. One **`ArgoCDCommitStatus`** (**`commit-statuses/argocd-commit-status.yaml`**) selects all guestbook **`Application`**s via **`app.kubernetes.io/name: guestbook`**; the controller maps each app to an environment from **`spec.sourceHydrator.syncSource.targetBranch`** (hydrated guestbook apps) and emits **`argocd-health`** commit statuses ([docs](https://gitops-promoter.readthedocs.io/en/latest/commit-status-controllers/argocd/)). **`TimedCommitStatus`** (**`commit-statuses/timed-commit-status.yaml`**) must list **every** environment branch that uses the **`timer`** gate—same **`branch`** values as **`PromotionStrategy.spec.environments`**—or that environment never gets a timer check on GitHub ([timed controller](https://gitops-promoter.readthedocs.io/en/latest/commit-status-controllers/timed/)). **`PromotionStrategy`** uses **`activeCommitStatuses`** (**`argocd-health`**, **`timer`**) and **`promoter-previous-environment`** ([gating](https://gitops-promoter.readthedocs.io/en/latest/gating-promotions/)).
-- `infra/gcp/terraform/`: Terraform for GCP networking and GKE
+- `infra/gcp/terraform/`: OpenTofu/Terraform HCL for GCP networking and GKE
 - `infra/gcp/check-prereqs.sh`: local environment check script
 - `infra/gcp/get-ingress-lb-ip.sh`: print ingress-nginx load balancer IP for DNS A records
 - `docs/`: architecture notes
@@ -63,7 +63,7 @@ Install these tools before starting:
 - `git`
 - `gcloud`
 - `kubectl`
-- `terraform`
+- `tofu` ([OpenTofu](https://opentofu.org/) CLI), or `terraform` 1.6+ if you prefer HashiCorp’s binary
 - `helm`
 - `kubeseal` (same major line as the in-cluster Sealed Secrets controller) when you create sealed manifests locally
 
@@ -110,16 +110,18 @@ If you are using your own domain instead of `gitops-promoter.dev`, update:
 
 ## 3. Authenticate to Google Cloud
 
-Log into GCP and set up Application Default Credentials for Terraform.
+Log into GCP with the Google identity that should own this demo (use a dedicated account if you like), and set up Application Default Credentials for OpenTofu/Terraform.
 
 ```bash
 gcloud auth login
+# Optional: pin the active CLI account when you use several Google identities
+# gcloud config set account <your-google-account>
 gcloud auth application-default login
 gcloud config set project <your-project-id>
 gcloud auth application-default set-quota-project <your-project-id>
 ```
 
-## 4. Prepare Terraform variables
+## 4. Prepare variables (`terraform.tfvars`)
 
 Copy the example file and edit it for your environment.
 
@@ -146,7 +148,7 @@ If the GCP project already exists, use:
 create_project = false
 ```
 
-If you want Terraform to create the project, use:
+If you want OpenTofu/Terraform to create the project, use:
 
 ```hcl
 create_project = true
@@ -154,15 +156,17 @@ create_project = true
 
 ## 5. Provision the GKE cluster
 
+From the repository root (examples use **`tofu`**; run the same commands with **`terraform`** if you use HashiCorp Terraform):
+
 ```bash
 cd infra/gcp/terraform
-terraform init
-terraform plan -out tfplan
-terraform apply tfplan
+tofu init
+tofu plan -out tfplan
+tofu apply tfplan
 cd ../../..
 ```
 
-Terraform creates:
+This stack creates:
 
 - required GCP APIs
 - a custom VPC
@@ -229,7 +233,7 @@ If `kubectl` or other tools warn that the quota project on Application Default C
 gcloud auth application-default set-quota-project <project-id>
 ```
 
-(You may have already run `gcloud auth application-default login` in **section 3** for Terraform; the quota project can still be set separately.)
+(You may have already run `gcloud auth application-default login` in **section 3** for OpenTofu/Terraform; the quota project can still be set separately.)
 
 ### 6.5 Verify access
 
@@ -470,7 +474,7 @@ kubectl get svc -n ingress-nginx ingress-nginx-controller \
 
 If the script errors, the Service may still show `<pending>` under `EXTERNAL-IP`; wait and retry. Use `kubectl -n ingress-nginx get svc` for full status.
 
-This repository assumes DNS for your domain is **not** in Google Cloud DNS (no managed zone is created by Terraform here). Create A records in **your DNS provider** (registrar, Cloudflare, Route 53, and so on):
+This repository assumes DNS for your domain is **not** in Google Cloud DNS (no managed zone is created by the GCP stack here). Create A records in **your DNS provider** (registrar, Cloudflare, Route 53, and so on):
 
 - `demo.<your-domain>`
 - `promoter-webhook.<your-domain>`
@@ -637,6 +641,6 @@ Update the dependency versions in the umbrella chart `Chart.yaml` files when you
 ## Notes
 
 - `infra/gcp/terraform/terraform.tfvars` is intentionally ignored and should stay local.
-- `.terraform.lock.hcl` is safe to commit and helps keep provider resolution reproducible.
+- `.terraform.lock.hcl` is safe to commit and helps keep provider resolution reproducible (regenerate with `tofu init` or `terraform init` after provider bumps).
 - The root app must point at a repository/branch that already contains the committed bootstrap manifests.
 - Transient **Unknown** sync status or other oddities: [DEBUGGING.md](DEBUGGING.md#argo-cd-sync-status-unknown).

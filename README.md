@@ -6,12 +6,12 @@ Public-style demo that runs **[GitOps Promoter](https://gitops-promoter.readthed
 
 | Doc | Audience |
 |-----|----------|
-| **[SETUP.md](SETUP.md)** | First-time cluster bring-up, Terraform, Argo bootstrap, secrets, DNS, monitoring, Promoter GitHub App |
+| **[SETUP.md](SETUP.md)** | First-time cluster bring-up, OpenTofu/Terraform, Argo bootstrap, secrets, DNS, monitoring, Promoter GitHub App |
 | **[DEBUGGING.md](DEBUGGING.md)** | Auth issues, Prometheus/Grafana scrape gaps, Dex/Grafana OAuth, churn script, timer checks, webhooks |
 
 ## Stack (high level)
 
-- **GKE** + **Terraform** (`infra/gcp/terraform/`)
+- **GKE** + **OpenTofu** / Terraform (`infra/gcp/terraform/`; CLI examples in [SETUP.md](SETUP.md) use **`tofu`**)
 - **Argo CD** (App-of-Apps, single-source `Application`s; guestbook envs use **source hydration**)
 - **cert-manager** + **ingress-nginx** for TLS
 - **Sealed Secrets** for credentials in Git
@@ -32,7 +32,7 @@ Child **Application**s are defined as a Helm chart under **`charts/apps/`** (one
 | **`charts/`** | Umbrella charts: **apps** (Argo child apps), **argocd**, **gitops-promoter**, **monitoring** (+ sealed templates) |
 | **`manifests/demo-churn/`** | CronJob that bumps **`demoChurn.lastBumped`** via GitHub API |
 | **`promoter-config/`** | `PromotionStrategy`, `GitRepository`, `ScmProvider`, commit-status controllers |
-| **`infra/gcp/`** | Terraform, helper scripts |
+| **`infra/gcp/`** | OpenTofu/Terraform (GKE), helper scripts |
 | **`docs/`** | Extra architecture notes |
 
 Conventions (GitOps-first, sync options, hydrator branches): [SETUP.md — Conventions](SETUP.md#conventions).

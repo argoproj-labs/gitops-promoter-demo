@@ -2,7 +2,7 @@
 .idea/
 **/.idea/
 
-# Terraform local artifacts
+# OpenTofu / Terraform local artifacts (both use .terraform/ by default)
 **/.terraform/
 **/*.tfstate
 **/*.tfstate.*
