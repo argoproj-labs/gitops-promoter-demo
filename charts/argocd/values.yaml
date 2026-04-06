@@ -63,10 +63,12 @@ argo-cd:
       policy.csv: |
         g, argoproj-labs:gitops-promoter-approvers, role:admin
     cm:
-      # Source hydrator git Author (argocd-cm); Signed-off-by in the template below must match this identity for DCO.
-      # https://github.com/argoproj/argo-cd/blob/master/docs/operator-manual/argocd-cm.yaml
-      commit.author.name: "GitOps Promoter Maintainers"
-      commit.author.email: "maintainers@gitops-promoter.dev"
+      # Hydrator git author: commit.author.name / commit.author.email (argocd-cm) are implemented only after
+      # https://github.com/argoproj/argo-cd/pull/25746 — not in Argo CD v3.3.6 (current stable). Until you upgrade,
+      # commits stay Author "Argo CD <argo-cd@example.com>"; Signed-off-by below must match for DCO (restart does not help).
+      # After upgrade, uncomment and align with Signed-off-by:
+      # commit.author.name: "GitOps Promoter Maintainers"
+      # commit.author.email: "maintainers@gitops-promoter.dev"
       # Hydrated commit subject/body (default-style template + DCO sign-off). Not GPG signing; see
       # https://argo-cd.readthedocs.io/en/stable/user-guide/source-hydrator/#commit-message-template
       sourceHydrator.commitMessageTemplate: |
@@ -84,7 +86,7 @@ argo-cd:
         Co-authored-by: {{ .metadata.author }}
         {{- end }}
 
-        Signed-off-by: GitOps Promoter Maintainers <maintainers@gitops-promoter.dev>
+        Signed-off-by: Argo CD <argo-cd@example.com>
       url: https://demo.gitops-promoter.dev
       # Embedded Dex → GitHub (client ID/secret in Secret/argocd-dex-github).
       # No orgs filter: any GitHub user may authenticate. RBAC maps argoproj-labs:gitops-promoter-approvers → admin.
