@@ -1,53 +1,59 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    // Pin GitHub Actions to immutable commit SHAs; Renovate keeps a trailing comment with the tag (e.g. # v4.3.1).
-    "helpers:pinGitHubActionDigests"
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+    'helpers:pinGitHubActionDigests',
   ],
-  "automerge": true,
-  "automergeType": "pr",
-  // GitOps Promoter Argo CD UI extension is not the Helm chart: track GitHub releases + installer image explicitly.
-  "customManagers": [
+  automerge: true,
+  automergeType: 'pr',
+  customManagers: [
     {
-      "customType": "regex",
-      "description": "GitOps Promoter Argo CD UI extension bundle URLs (github-releases, not gitops-promoter-helm)",
-      "fileMatch": ["(^|/)charts/argocd/values\\.yaml$"],
-      "datasourceTemplate": "github-releases",
-      "packageNameTemplate": "argoproj-labs/gitops-promoter",
-      "extractVersionTemplate": "^v(?<version>.+)$",
-      "versioningTemplate": "semver",
-      "matchStrings": [
-        // EXTENSION_URL — .tar.gz
-        "https://github\\.com/argoproj-labs/gitops-promoter/releases/download/v(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)/gitops-promoter-argocd-extension\\.tar\\.gz",
-        // EXTENSION_CHECKSUM_URL — same release in path (before gitops-promoter_<ver>_checksums)
-        "https://github\\.com/argoproj-labs/gitops-promoter/releases/download/v(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)/gitops-promoter_",
-        // EXTENSION_CHECKSUM_URL — filename must match release semver (no leading v)
-        "gitops-promoter_(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)_checksums\\.txt"
-      ]
+      customType: 'regex',
+      description: 'GitOps Promoter Argo CD UI extension bundle URLs (github-releases, not gitops-promoter-helm)',
+      managerFilePatterns: [
+        '/(^|/)charts/argocd/values\\.yaml$/',
+      ],
+      datasourceTemplate: 'github-releases',
+      packageNameTemplate: 'argoproj-labs/gitops-promoter',
+      extractVersionTemplate: '^v(?<version>.+)$',
+      versioningTemplate: 'semver',
+      matchStrings: [
+        'https://github\\.com/argoproj-labs/gitops-promoter/releases/download/v(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)/gitops-promoter-argocd-extension\\.tar\\.gz',
+        'https://github\\.com/argoproj-labs/gitops-promoter/releases/download/v(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)/gitops-promoter_',
+        'gitops-promoter_(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)_checksums\\.txt',
+      ],
     },
     {
-      "customType": "regex",
-      "description": "argocd-extension-installer init container (Quay)",
-      "fileMatch": ["(^|/)charts/argocd/values\\.yaml$"],
-      "datasourceTemplate": "docker",
-      "packageNameTemplate": "quay.io/argoprojlabs/argocd-extension-installer",
-      "matchStrings": [
-        "image:\\s*quay\\.io/argoprojlabs/argocd-extension-installer:(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)(@(?<currentDigest>sha256:[a-f0-9]{64}))"
-      ]
-    }
+      customType: 'regex',
+      description: 'argocd-extension-installer init container (Quay)',
+      managerFilePatterns: [
+        '/(^|/)charts/argocd/values\\.yaml$/',
+      ],
+      datasourceTemplate: 'docker',
+      packageNameTemplate: 'quay.io/argoprojlabs/argocd-extension-installer',
+      matchStrings: [
+        'image:\\s*quay\\.io/argoprojlabs/argocd-extension-installer:(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)(@(?<currentDigest>sha256:[a-f0-9]{64}))',
+      ],
+    },
   ],
-  "packageRules": [
+  packageRules: [
     {
-      "description": "Helm umbrella dependencies (Chart.yaml) across charts/",
-      "matchManagers": ["helmv3"],
-      "automerge": true
+      description: 'Helm umbrella dependencies (Chart.yaml) across charts/',
+      matchManagers: [
+        'helmv3',
+      ],
+      automerge: true,
     },
     {
-      "description": "Demo churn / small image pins in raw YAML",
-      "matchManagers": ["kubernetes"],
-      "matchPackageNames": ["alpine/git", "alpine"],
-      "automerge": true
-    }
-  ]
+      description: 'Demo churn / small image pins in raw YAML',
+      matchManagers: [
+        'kubernetes',
+      ],
+      matchPackageNames: [
+        'alpine/git',
+        'alpine',
+      ],
+      automerge: true,
+    },
+  ],
 }
