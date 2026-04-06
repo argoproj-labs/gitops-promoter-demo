@@ -1,0 +1,45 @@
+# Self-hosted Renovate (see renovate.json5). Runs daily; use workflow_dispatch to run on demand.
+#
+# Authentication: GitHub App installation token (recommended for orgs). No PAT required.
+# - Variable: RENOVATE_APP_ID (repo or org — numeric App ID from the app’s settings page)
+# - Secret:  RENOVATE_APP_PRIVATE_KEY (PEM for that app; paste full key including BEGIN/END lines)
+# The app must be installed on argoproj-labs with access to this repository.
+#
+# If you also use the hosted "Renovate" GitHub App (Mend) on the same repo, disable one of the
+# two flows or they will both open dependency PRs.
+name: Renovate
+
+on:
+  schedule:
+    # Daily at 05:30 UTC (quoted: YAML treats "*" specially in cron strings)
+    - cron: "30 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+jobs:
+  renovate:
+    name: Run Renovate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.RENOVATE_APP_ID }}
+          private-key: ${{ secrets.RENOVATE_APP_PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@v46.1.7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+        env:
+          LOG_LEVEL: info

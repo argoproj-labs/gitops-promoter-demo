@@ -17,7 +17,8 @@ argo-cd:
         nginx.ingress.kubernetes.io/backend-protocol: HTTP
         nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
       tls: true
-    # GitOps Promoter UI extension (https://gitops-promoter.readthedocs.io/en/latest/argocd-integrations/)
+    # GitOps Promoter UI extension (https://gitops-promoter.readthedocs.io/en/latest/argocd-integrations/).
+    # Versions: Renovate — github-releases argoproj-labs/gitops-promoter (URLs below) + docker quay.io/argoprojlabs/argocd-extension-installer (image). Not the gitops-promoter Helm chart.
     initContainers:
       - name: extension-gitops-promoter
         image: quay.io/argoprojlabs/argocd-extension-installer:v0.0.9@sha256:d2b43c18ac1401f579f6d27878f45e253d1e3f30287471ae74e6a4315ceb0611
