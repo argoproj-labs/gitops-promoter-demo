@@ -63,6 +63,24 @@ argo-cd:
       policy.csv: |
         g, argoproj-labs:gitops-promoter-approvers, role:admin
     cm:
+      # Hydrated commit subject/body (default-style template + DCO-style sign-off). Not GPG signing; see
+      # https://argo-cd.readthedocs.io/en/stable/user-guide/source-hydrator/#commit-message-template
+      sourceHydrator.commitMessageTemplate: |
+        {{.metadata.drySha | trunc 7}}: {{ .metadata.subject }}
+        {{- if .metadata.body }}
+
+        {{ .metadata.body }}
+        {{- end }}
+        {{ range $ref := .metadata.references }}
+        {{- if and $ref.commit $ref.commit.author }}
+        Co-authored-by: {{ $ref.commit.author }}
+        {{- end }}
+        {{- end }}
+        {{- if .metadata.author }}
+        Co-authored-by: {{ .metadata.author }}
+        {{- end }}
+
+        Signed-off-by: GitOps Promoter Maintainers <maintainers@gitops-promoter.dev>
       url: https://demo.gitops-promoter.dev
       # Embedded Dex → GitHub (client ID/secret in Secret/argocd-dex-github).
       # No orgs filter: any GitHub user may authenticate. RBAC maps argoproj-labs:gitops-promoter-approvers → admin.
