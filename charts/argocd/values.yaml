@@ -63,7 +63,11 @@ argo-cd:
       policy.csv: |
         g, argoproj-labs:gitops-promoter-approvers, role:admin
     cm:
-      # Hydrated commit subject/body (default-style template + DCO-style sign-off). Not GPG signing; see
+      # Source hydrator git Author (argocd-cm); Signed-off-by in the template below must match this identity for DCO.
+      # https://github.com/argoproj/argo-cd/blob/master/docs/operator-manual/argocd-cm.yaml
+      commit.author.name: "GitOps Promoter Maintainers"
+      commit.author.email: "maintainers@gitops-promoter.dev"
+      # Hydrated commit subject/body (default-style template + DCO sign-off). Not GPG signing; see
       # https://argo-cd.readthedocs.io/en/stable/user-guide/source-hydrator/#commit-message-template
       sourceHydrator.commitMessageTemplate: |
         {{.metadata.drySha | trunc 7}}: {{ .metadata.subject }}
