@@ -18,6 +18,8 @@ This document captures the cloud assumptions for the demo instance on Google Clo
 - `promoter-webhook.gitops-promoter.dev`: GitOps Promoter webhook receiver (separate from Argo CD’s Git webhook; **no HMAC secret verification** in Promoter today — see [SETUP.md](../SETUP.md) §12.1)
 - `grafana.gitops-promoter.dev`: public read-only dashboard
 
+Per-**Ingress** nginx rate limits (**`limit-rps` / `limit-burst-multiplier`**) are set in **`charts/argocd`** and **`charts/monitoring`** for typical browser use. [Cloud Armor](https://cloud.google.com/armor/docs/cloud-armor-overview) needs an HTTP(S) load balancer in front of the cluster, not the default NLB → nginx path.
+
 ## Open implementation decisions
 
 1. Keep `ingress-nginx` or move to GKE Gateway API later.

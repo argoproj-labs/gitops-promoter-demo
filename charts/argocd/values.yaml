@@ -16,6 +16,9 @@ argo-cd:
         cert-manager.io/cluster-issuer: letsencrypt-prod
         nginx.ingress.kubernetes.io/backend-protocol: HTTP
         nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+        # Per-client-IP; ~normal browsing; raise or use limit-whitelist for GitHub hooks if needed
+        nginx.ingress.kubernetes.io/limit-rps: "20"
+        nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
       tls: true
     # GitOps Promoter UI extension (https://gitops-promoter.readthedocs.io/en/latest/argocd-integrations/).
     # Versions: Renovate — github-releases argoproj-labs/gitops-promoter (URLs below) + docker quay.io/argoprojlabs/argocd-extension-installer (image). Not the gitops-promoter Helm chart.

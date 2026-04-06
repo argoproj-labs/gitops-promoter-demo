@@ -3,6 +3,7 @@ gitops-promoter:
   prometheus:
     enable: false
 
+  # Chart 0.5.1 does not render an Ingress here; if you add one for promoter-webhook.*, use the same limit-rps as Argo/Grafana.
   webhookReceiver:
     ingress:
       enabled: true
