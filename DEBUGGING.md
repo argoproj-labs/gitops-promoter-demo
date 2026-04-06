@@ -25,8 +25,9 @@ Right after bootstrap or a large first push, the UI can show **Unknown** briefly
 
 1. **Callback URL** on the GitHub OAuth app must be exactly `https://<argocd-host>/api/dex/callback` (no trailing slash; **https** if the UI is served over TLS).
 2. **`Secret/argocd-dex-github`** in **`argocd`**: keys **`clientId`** / **`clientSecret`** (camelCase), label **`app.kubernetes.io/part-of: argocd`**.
-3. **Org approval:** GitHub must allow the OAuth app for your org or Dex cannot read teams (`application not authorized to read org data` in Dex logs).
-4. Logs:
+3. **Org approval (for approvers / admin):** Basic login works for any GitHub user. To populate **`groups`** with **`argoproj-labs:gitops-promoter-approvers`**, the OAuth app must be allowed to read that org’s data—otherwise Dex logs **`application not authorized to read org data`** and those users stay **readonly**.
+4. **Wrong role (e.g. readonly when you expect admin):** confirm your GitHub user is in the team named in **`charts/argocd/values.yaml`** **`policy.csv`** (`org:team` must match Dex’s **`groups`** claim; see **SETUP.md §9**).
+5. **Logs:**
 
 ```bash
 kubectl -n argocd logs deploy/argocd-dex-server --tail=80

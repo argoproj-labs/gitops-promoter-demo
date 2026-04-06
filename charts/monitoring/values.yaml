@@ -69,10 +69,9 @@ kube-prometheus-stack:
       auth.github:
         enabled: true
         allow_sign_up: true
+        # read:org helps resolve team membership for users who are in orgs (e.g. approvers → Editor).
         scopes: user:email,read:org
-        # Same org gate as charts/argocd/values.yaml Dex config; adjust if you fork.
-        allowed_organizations: argoproj-labs
-        # Match Argo CD Dex group argoproj-labs:gitops-promoter-approvers → Grafana org Editor (dashboard write).
+        # No allowed_organizations: any GitHub user may sign in (Viewer unless role_attribute_path matches).
         role_attribute_path: "contains(groups[*], '@argoproj-labs/gitops-promoter-approvers') && 'Editor' || 'Viewer'"
       users:
         auto_assign_org_role: Viewer

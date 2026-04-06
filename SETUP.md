@@ -97,7 +97,7 @@ At minimum, update:
 Things you will almost certainly change:
 
 - GitHub owner/repository URLs
-- Argo CD RBAC group mapping and Dex **`orgs`** / **`teams`** in **`charts/argocd/values.yaml`** (must match `org:team` in **`policy.csv`**)
+- Argo CD RBAC (**`policy.csv`**) and Dex GitHub connector (**no `orgs`** in this demo: any GitHub user may log in; **`argoproj-labs:gitops-promoter-approvers`** → **admin**)
 - public hostnames
 - GitOps Promoter GitHub owner/repo references
 - secret names once you introduce real credentials
@@ -443,7 +443,7 @@ GitHub **[OAuth Apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-
 
 Under the app, create a **client secret**.
 
-**Org access (required for org-based login):** GitHub will not let Dex read org or team membership until the OAuth app is allowed for that org. For this demo, **`argoproj-labs`** org owners must approve the app under **Organization `argoproj-labs`** → **Settings** → **Third-party access** (or users complete the org grant when authorizing). Without this, Dex logs **`application not authorized to read org data`** and the UI shows **login failed**. See Dex’s [GitHub connector caveats](https://dexidp.io/docs/connectors/github/).
+**Org access (for approvers / team claims):** Any GitHub account can complete OAuth; **`policy.default`** is **readonly**. To resolve **`argoproj-labs:gitops-promoter-approvers`** into the **`groups`** claim for **admin**, GitHub must allow the OAuth app to read **`argoproj-labs`** org data—org owners approve under **Organization → Settings → Third-party access**, or the user grants org access when authorizing. Users who are not org members still sign in as **readonly**. If an approver has not granted org access, Dex may log **`application not authorized to read org data`**. See Dex’s [GitHub connector caveats](https://dexidp.io/docs/connectors/github/).
 
 **2. Seal credentials into the repo (exact path)**
 
@@ -468,10 +468,10 @@ Until that **`Secret`** exists, Dex may log errors about missing client credenti
 
 **3. Align org, team claims, and RBAC**
 
-- This demo’s **`dex.config`** matches the shape used in the upstream Argo CD project demo: org **`argoproj-labs`**, team **`gitops-promoter-approvers`**. Only members of that team can finish OAuth; others fail at Dex (often as **login failed**). The OAuth app must be **approved for `argoproj-labs`** so Dex can read org/team data.
-- Dex’s default **`teamNameField`** (**`name`**) controls how **`org:team`** appears in **`groups`**. The **`g, …`** line in **`argo-cd.configs.rbac.policy.csv`** must match that claim (often **`argoproj-labs:gitops-promoter-approvers`** when GitHub’s team name matches the slug). If you get **readonly** after login, adjust **`policy.csv`** to the actual group string.
+- This demo’s **`dex.config`** omits **`orgs`**, so **any** GitHub user can authenticate. **`policy.default`** is **`role:readonly`**; only **`argoproj-labs:gitops-promoter-approvers`** maps to **`role:admin`** in **`policy.csv`**. Approvers still need the OAuth app authorized for **`argoproj-labs`** org data so Dex can emit that team in **`groups`** (see **Org access** above).
+- Dex’s default **`teamNameField`** (**`name`**) controls how **`org:team`** appears in **`groups`**. The **`g, …`** line in **`argo-cd.configs.rbac.policy.csv`** must match that claim. If approvers still get **readonly**, adjust **`policy.csv`** to the actual group string from the token.
 
-If you fork the repo, update the **`orgs`** / **`teams`** entries, the **`g, org:team, role:admin`** line, and your GitHub OAuth app’s callback URL for your real hostname.
+If you fork the repo, update the **`g, org:team, role:admin`** line and your GitHub OAuth app’s callback URL. To **restrict** who may log in (e.g. org or team only), add **`orgs`** (and optional **`teams`**) under **`dex.config`** ([Dex GitHub connector](https://dexidp.io/docs/connectors/github/)).
 
 **4. If GitHub login still fails:** see [DEBUGGING.md](DEBUGGING.md#argo-cd-dex-login-failed).
 
@@ -527,9 +527,9 @@ If this repository’s **`grafana-github-oauth.sealed.yaml`** was generated from
 
 Grafana’s deployment references **`Secret/grafana-github-oauth`** as **required** env vars, so the Grafana pod stays **Pending** until the **`SealedSecret`** is applied and unsealed (clear failure mode if the file is missing or the key does not match this cluster). **Use Sign in with GitHub only:** **`charts/monitoring/values.yaml`** turns off the built-in **`admin`** user (**`GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION`**) and password UI (**`[auth] disable_login_form`**, **`[auth.basic] enabled = false`**), so Helm no longer emits a chart-managed **`Secret`** whose random **`admin-password`** would change every hydration and keep Argo CD **OutOfSync**.
 
-**Customize** Grafana hostname and **`auth.github.allowed_organizations`** in **`charts/monitoring/values.yaml`** (keep **`ingress`**, **`tls`**, and **`grafana.ini.server.root_url`** consistent).
+**Customize** Grafana hostname in **`charts/monitoring/values.yaml`** (keep **`ingress`**, **`tls`**, and **`grafana.ini.server.root_url`** consistent). To restrict sign-in to specific orgs, set **`auth.github.allowed_organizations`** again.
 
-Prometheus is configured with **`serviceMonitorSelectorNilUsesHelmValues: false`** and an empty **`serviceMonitorSelector`** so it discovers **`ServiceMonitor`** resources in other namespaces/releases. Grafana maps **`@argoproj-labs/gitops-promoter-approvers`** to **Editor** via **`auth.github.role_attribute_path`**; re-login after changing it.
+Prometheus is configured with **`serviceMonitorSelectorNilUsesHelmValues: false`** and an empty **`serviceMonitorSelector`** so it discovers **`ServiceMonitor`** resources in other namespaces/releases. **Who can use Grafana:** This demo does **not** set **`allowed_organizations`**, so **any** GitHub user may sign in. **`role_attribute_path`** assigns **Editor** to **`@argoproj-labs/gitops-promoter-approvers`** and **Viewer** to everyone else (same approvers team as Argo **admin** in **§9**). Re-login after changing roles. **Security:** a public URL plus open sign-in exposes metrics UIs to the whole GitHub user base—tighten with **`allowed_organizations`**, network policy, or SSO if needed.
 
 If Argo CD stays **Progressing** on the **`Prometheus`** CR, see [DEBUGGING.md](DEBUGGING.md#prometheus-cr-stuck-waiting-for-healthy).
 
