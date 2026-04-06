@@ -262,6 +262,16 @@ gcloud components install gke-gcloud-auth-plugin
 
 Install Argo CD once from **this repository’s Helm chart** (same version and values as the `argocd` Application), then hand off to GitOps. Server-side apply avoids CRD `last-applied-configuration` size limits and matches how large manifests are applied safely.
 
+**Sealed Secrets CRD first.** The `charts/argocd` umbrella ships **SealedSecret** resources under `charts/argocd/templates/`. The API server rejects them until the **Sealed Secrets** CRD exists. Install the controller once with the same chart and release name Argo CD will manage later (`Application/sealed-secrets` → **`sealed-secrets`** in **`kube-system`**):
+
+```bash
+cd charts/sealed-secrets
+helm dependency build
+helm upgrade --install sealed-secrets . -n kube-system --create-namespace
+kubectl rollout status deployment/sealed-secrets -n kube-system --timeout=120s
+cd ../..
+```
+
 From the repository root, with `helm` and `kubectl` configured for the cluster:
 
 ```bash
