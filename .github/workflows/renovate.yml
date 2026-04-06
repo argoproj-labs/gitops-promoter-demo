@@ -35,7 +35,7 @@ jobs:
           private-key: ${{ secrets.RENOVATE_APP_PRIVATE_KEY }}
 
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v4.3.1
 
       # Without RENOVATE_REPOSITORIES, the container exits with "No repositories found"
       # (it does not infer the repo from checkout alone).
