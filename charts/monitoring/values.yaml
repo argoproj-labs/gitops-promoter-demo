@@ -17,19 +17,27 @@ kube-prometheus-stack:
       scrapeInterval: 30s
       resources:
         requests:
-          cpu: 200m
-          memory: 512Mi
+          cpu: 150m
+          memory: 768Mi
+        limits:
+          memory: 2Gi
 
   alertmanager:
     enabled: true
     alertmanagerSpec:
       resources:
         requests:
-          cpu: 25m
-          memory: 64Mi
+          cpu: 10m
+          memory: 48Mi
 
   grafana:
     enabled: true
+    resources:
+      requests:
+        cpu: 50m
+        memory: 320Mi
+      limits:
+        memory: 512Mi
     # No local admin user or Secret: avoids per-render random admin-password (GitOps drift) and matches OAuth-only access.
     env:
       GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION: "true"
@@ -88,11 +96,17 @@ kube-prometheus-stack:
   prometheusOperator:
     resources:
       requests:
-        cpu: 100m
-        memory: 128Mi
+        cpu: 25m
+        memory: 64Mi
 
   kubeStateMetrics:
     enabled: true
+
+  kube-state-metrics:
+    resources:
+      requests:
+        cpu: 25m
+        memory: 48Mi
 
   nodeExporter:
     enabled: true

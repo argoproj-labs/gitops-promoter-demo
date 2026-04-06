@@ -1,4 +1,13 @@
 gitops-promoter:
+  manager:
+    resources:
+      requests:
+        cpu: 25m
+        memory: 48Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+
   # Upstream ServiceMonitor selector does not match the metrics Service labels (chart 0.5.1); use umbrella SM below.
   prometheus:
     enable: false

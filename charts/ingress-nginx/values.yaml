@@ -1,5 +1,9 @@
 ingress-nginx:
   controller:
+    resources:
+      requests:
+        cpu: 25m
+        memory: 96Mi
     service:
       externalTrafficPolicy: Local
     # Let cert-manager inject CA into the admission ValidatingWebhookConfiguration.

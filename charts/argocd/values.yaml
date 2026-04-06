@@ -2,6 +2,20 @@ argo-cd:
   global:
     domain: demo.gitops-promoter.dev
 
+  controller:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 768Mi
+
+  repoServer:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+
   # Source hydrator (alpha): renders dry manifests and pushes to Git; required for GitOps Promoter’s
   # Argo CD integration. See https://argo-cd.readthedocs.io/en/stable/user-guide/source-hydrator/
   commitServer:
@@ -44,6 +58,22 @@ argo-cd:
     volumes:
       - name: extensions
         emptyDir: {}
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+
+  redis:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+
+  dex:
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
 
   configs:
     # GitHub webhook HMAC: indirection only (safe in Git). Argo CD reads the literal
