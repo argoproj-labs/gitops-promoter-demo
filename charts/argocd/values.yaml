@@ -58,7 +58,8 @@ argo-cd:
       # Enables hydrator controller + commit server wiring in argo-helm (restart app controller / API server on change).
       hydrator.enabled: "true"
     rbac:
-      # Any GitHub user may use Dex (below); only this org:team claim maps to admin (others → policy.default).
+      # Anonymous UI (users.anonymous.enabled) uses policy.default. Dex orgs/teams below limits GitHub login to
+      # argoproj-labs/gitops-promoter-approvers; that group maps to role:admin via policy.csv.
       policy.default: role:readonly
       policy.csv: |
         g, argoproj-labs:gitops-promoter-approvers, role:admin
@@ -88,8 +89,11 @@ argo-cd:
 
         Signed-off-by: Argo CD <argo-cd@example.com>
       url: https://demo.gitops-promoter.dev
+      # Unauthenticated browser/API: read-only via policy.default (see rbac above).
+      # https://argo-cd.readthedocs.io/en/stable/operator-manual/argocd-cm-yaml/
+      users.anonymous.enabled: "true"
       # Embedded Dex → GitHub (client ID/secret in Secret/argocd-dex-github).
-      # No orgs filter: any GitHub user may authenticate. RBAC maps argoproj-labs:gitops-promoter-approvers → admin.
+      # orgs/teams: only members of this team may complete GitHub login; Dex emits `groups` for RBAC (policy.csv).
       # https://argo-cd.readthedocs.io/en/stable/operator-manual/user-management/#configuring-github-oauth2
       dex.config: |
         connectors:
@@ -99,6 +103,11 @@ argo-cd:
           config:
             clientID: $argocd-dex-github:clientId
             clientSecret: $argocd-dex-github:clientSecret
+            orgs:
+            - name: argoproj-labs
+              teams:
+              - gitops-promoter-approvers
+            teamNameField: slug
       resource.customLabels: promoter.argoproj.io/commit-status
       resource.links: |
         - url: '{{.resource.status.url}}'
