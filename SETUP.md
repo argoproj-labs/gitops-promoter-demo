@@ -326,6 +326,8 @@ In the GitHub repository that Argo CD reads (your fork of this demo repo, or any
 
 Save the webhook. GitHub may show a failed delivery until the sealed manifest in the next section is synced.
 
+**Alternative: GitHub App webhook (no per-repo webhook).** If you already use a **GitHub App** (for example the same app as GitOps Promoter or the hydrator), configure webhooks on the **app** instead of under **Repository → Webhooks**: in the app’s settings, set **Webhook URL** to **`https://demo.<your-domain>/api/webhook`**, set **Webhook secret** to the same random string you will seal into **`argocd-github-webhook`**, and subscribe to **Push** (and any other events your app policy allows). Argo CD verifies **`X-Hub-Signature-256`** the same way for App deliveries as for classic repository webhooks. You still seal that shared secret in the next step.
+
 **3. Seal the shared secret and commit it (Sealed Secrets only)**
 
 Helm in this repo sets **`webhook.github.secret`** on **`argocd-secret`** to the indirection string **`$argocd-github-webhook:githubWebhookSecret`**. Argo CD resolves that at runtime from a normal **`Secret`** named **`argocd-github-webhook`** in **`argocd`**, as in the upstream [webhook “Alternative”](https://argo-cd.readthedocs.io/en/stable/operator-manual/webhook/#alternative) docs. That **`Secret`** must have label **`app.kubernetes.io/part-of: argocd`** and data key **`githubWebhookSecret`** holding the same value you configured in GitHub.
@@ -568,10 +570,14 @@ Official reference: [GitOps Promoter getting started](https://gitops-promoter.re
 
 1. [Create a GitHub App](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app) (org or user).
 2. Permissions (from upstream docs): **Checks** read/write, **Contents** read/write, **Pull requests** read/write.
-3. **Webhook (recommended):** set **Webhook URL** to **`https://promoter-webhook.<your-domain>/`** (same host as **`charts/gitops-promoter/values.yaml`** → **`webhookReceiver.ingress.hostname`**). Use the payload format GitHub defaults to unless the Promoter docs specify otherwise.
-4. **Webhook “secret” on GitHub:** GitHub lets you set a signing secret for repository webhooks, but the GitOps Promoter **webhook receiver does not verify** **`X-Hub-Signature-256`** (or similar) today — see [`internal/webhookreceiver/server.go`](https://github.com/argoproj-labs/gitops-promoter/blob/main/internal/webhookreceiver/server.go) in **v0.25.1** / **main**. Setting a secret in GitHub does not harden this endpoint until upstream adds verification. Mitigations: keep the URL non-obvious, restrict at ingress/network (allowlist GitHub IPs, internal-only URL, or a front proxy that validates signatures), and treat the receiver as **unauthenticated trigger** surface (it only enqueues reconcile when a matching **`ChangeTransferPolicy`** exists).
-5. Generate and download a **private key** (`.pem`).
-6. Note the app’s **App ID** (numeric). **Install** the **GitHub App** on the user or organization that owns the repositories GitOps Promoter will use via the API (see below). Note **Installation ID** if you want to pin it (optional on `ScmProvider`; see **`promoter-config/scm-provider.yaml`**).
+
+**Single app for Argo + Promoter (this demo’s default).** A GitHub App allows only **one** webhook URL. The Promoter **webhook receiver does not verify** **`X-Hub-Signature-256`** today ([`internal/webhookreceiver/server.go`](https://github.com/argoproj-labs/gitops-promoter/blob/main/internal/webhookreceiver/server.go) in **v0.25.1** / **main**), while Argo CD **does**. Until Promoter supports authenticated webhooks, point the app’s **Webhook URL** at **Argo CD** — **`https://demo.<your-domain>/api/webhook`** — with the **same** secret you seal into **`argocd-github-webhook`** (**§8**). Use that **same** app for **`ScmProvider`**, hydrator **repository-write**, and (optionally) Argo’s GitHub App webhook path in **§8**. GitHub will **not** call **`https://promoter-webhook.<your-domain>/`** while the URL is Argo’s; Promoter still runs via the controller (polling / reconcile), only **instant** GitHub→Promoter delivery is deferred. When upstream adds webhook verification, split to a second app and set its webhook to **`promoter-webhook.<your-domain>`** (matching **`charts/gitops-promoter/values.yaml`**).
+
+**Dedicated Promoter webhook (optional, second app or after split):** set **Webhook URL** to **`https://promoter-webhook.<your-domain>/`**. Treat the receiver as an **unauthenticated trigger** surface until verification lands; mitigate with a non-obvious URL, network allowlists, or a validating proxy.
+
+3. **Webhook secret (GitHub):** For the Argo-targeted URL, use a strong secret and seal it per **§8**. For Promoter-only URLs, GitHub may still offer a signing secret, but the controller does not validate it yet (same caveats as above).
+4. Generate and download a **private key** (`.pem`).
+5. Note the app’s **App ID** (numeric). **Install** the **GitHub App** on the user or organization that owns the repositories GitOps Promoter will use via the API (see below). Note **Installation ID** if you want to pin it (optional on `ScmProvider`; see **`promoter-config/scm-provider.yaml`**).
 
 **Which repositories must the installation include?**
 
@@ -621,7 +627,7 @@ Push; after sync, **`kubectl -n gitops-promoter get sealedsecret,secret,scmprovi
 
 ### 12.6 Checklist (other prerequisites)
 
-1. Create GitHub App, **install** it with access to the repo in **`git-repository.yaml`** (see **§12.1**); configure webhook host to **`promoter-webhook.<your-domain>`** when ingress is ready.
+1. Create GitHub App, **install** it with access to the repo in **`git-repository.yaml`** (see **§12.1**). By default point the app webhook at **Argo CD** (**`https://demo.<your-domain>/api/webhook`**); use a **second** app with **`promoter-webhook.<your-domain>`** only when you want a dedicated Promoter webhook (for example after Promoter verifies signatures).
 2. Ensure branches in that repo match **`promotion-strategy.yaml`** (and your hydrator).
 3. Seal and commit **`charts/gitops-promoter/templates/github-app-credentials.sealed.yaml`**.
 4. Set **`appID`** (and optionally **`installationID`**) in **`promoter-config/scm-provider.yaml`**; fix **`git-repository.yaml`** owner/name.
