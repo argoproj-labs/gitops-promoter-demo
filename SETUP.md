@@ -107,6 +107,7 @@ If you are using your own domain instead of `gitops-promoter.dev`, update:
 - `demo.<your-domain>`
 - `promoter-webhook.<your-domain>`
 - `grafana.<your-domain>`
+- `charts/gitops-promoter/values.yaml` — in **`controllerConfiguration.pullRequest.template.description`**, the **`urlParse`** host must match your public Argo CD URL (same origin as **`demo.<your-domain>`**) so promotion PRs link back to the GitOps Promoter extension ([upstream example](https://github.com/argoproj-labs/gitops-promoter/pull/1287))
 
 ## 3. Authenticate to Google Cloud
 
