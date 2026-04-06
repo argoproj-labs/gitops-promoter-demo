@@ -1,7 +1,7 @@
 {
   "repoURL": "https://github.com/argoproj-labs/gitops-promoter-demo",
-  "drySha": "46a537df03ffd0a3ce977b2f355526ca22d2c52f",
-  "author": "Michael Crenshaw <350466+crenshaw-dev@users.noreply.github.com>",
-  "date": "2026-04-06T00:51:35Z",
-  "subject": "clarify hook behavior"
+  "drySha": "f0a85e0773eb425a9ac60edcce2fc81045f7a0e3",
+  "author": "gitops-promoter-demo-labs-repo[bot] <273879727+gitops-promoter-demo-labs-repo[bot]@users.noreply.github.com>",
+  "date": "2026-04-06T01:00:11Z",
+  "subject": "chore: promoter demo churn 2026-04-06T01:00:10Z"
 }
