@@ -245,6 +245,8 @@
         "y": 10
       },
       "id": 19,
+      "description": "Fewer time buckets than default so wide ranges stay readable; zoom in for finer detail.",
+      "maxDataPoints": 384,
       "options": {
         "calculate": false,
         "cellGap": 2,
@@ -325,8 +327,8 @@
         "y": 18
       },
       "id": 20,
-      "interval": "15s",
-      "maxDataPoints": 1550,
+      "description": "Fewer time buckets than default so wide ranges stay readable; zoom in for finer detail.",
+      "maxDataPoints": 384,
       "options": {
         "calculate": false,
         "cellGap": 2,
@@ -407,8 +409,8 @@
         "y": 18
       },
       "id": 21,
-      "interval": "15s",
-      "maxDataPoints": 1550,
+      "description": "Fewer time buckets than default so wide ranges stay readable; zoom in for finer detail.",
+      "maxDataPoints": 384,
       "options": {
         "calculate": false,
         "cellGap": 2,
@@ -489,8 +491,8 @@
         "y": 26
       },
       "id": 22,
-      "interval": "15s",
-      "maxDataPoints": 1550,
+      "description": "Fewer time buckets than default so wide ranges stay readable; zoom in for finer detail.",
+      "maxDataPoints": 384,
       "options": {
         "calculate": false,
         "cellGap": 2,
@@ -571,8 +573,8 @@
         "y": 26
       },
       "id": 23,
-      "interval": "15s",
-      "maxDataPoints": 1550,
+      "description": "Fewer time buckets than default so wide ranges stay readable; zoom in for finer detail.",
+      "maxDataPoints": 384,
       "options": {
         "calculate": false,
         "cellGap": 2,
@@ -766,6 +768,8 @@
         "y": 35
       },
       "id": 3,
+      "description": "Fewer time buckets than default so wide ranges stay readable; zoom in for finer detail.",
+      "maxDataPoints": 384,
       "options": {
         "calculate": false,
         "cellGap": 2,
@@ -1211,6 +1215,8 @@
         "y": 52
       },
       "id": 8,
+      "description": "Fewer time buckets than default so wide ranges stay readable; zoom in for finer detail.",
+      "maxDataPoints": 384,
       "options": {
         "calculate": false,
         "cellGap": 2,
@@ -1574,7 +1580,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "scm_calls_rate_limit_remaining",
+          "expr": "min by (scm_provider) (scm_calls_rate_limit_remaining)",
           "legendFormat": "{{scm_provider}}",
           "range": true,
           "refId": "A"
@@ -1672,7 +1678,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "scm_calls_rate_limit_remaining",
+          "expr": "min by (scm_provider) (scm_calls_rate_limit_remaining)",
           "legendFormat": "{{scm_provider}} remaining",
           "range": true,
           "refId": "A"
@@ -1683,7 +1689,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "scm_calls_rate_limit_limit",
+          "expr": "max by (scm_provider) (scm_calls_rate_limit_limit)",
           "legendFormat": "{{scm_provider}} limit",
           "range": true,
           "refId": "B"
@@ -1754,7 +1760,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "scm_calls_rate_limit_reset_remaining_seconds",
+          "expr": "min by (scm_provider) (scm_calls_rate_limit_reset_remaining_seconds)",
           "legendFormat": "{{scm_provider}}",
           "range": true,
           "refId": "A"
