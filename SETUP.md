@@ -34,7 +34,7 @@ Later commits can add:
 
 ## Repository layout
 
-Overview: [README.md — Repository layout](README.md#repository-layout-short). Details:
+Paths you will touch when cloning, forking, or extending this demo:
 
 - `apps/`: bootstrap **`Application/root-app`** only; child apps are Helm templates in **`charts/apps/`** (single **`repoURL`** in **`charts/apps/values.yaml`** — keep **`apps/root-app.yaml`** `spec.source.repoURL` the same)
 - `demo-apps/guestbook/`: minimal in-tree Helm chart (Deployment + Service, **`gcr.io/google-samples/gb-frontend:v5`**). Guestbook **`Application`**s use [**source hydration**](https://argo-cd.readthedocs.io/en/stable/user-guide/source-hydrator/): Argo reads **`demo-apps/guestbook`** on **`HEAD`**, writes rendered YAML under **`hydrated/guestbook-{dev,e2e,prd}`** on each env’s **`env/<env>-next`** branch, and syncs from **`env/<env>`** after GitOps Promoter merges **`env/<env>-next` → `env/<env>`**. Per-env replica counts use **`demo-apps/guestbook/env/{dev,e2e,prd}/values.yaml`**
@@ -97,7 +97,7 @@ At minimum, update:
 Things you will almost certainly change:
 
 - GitHub owner/repository URLs
-- Argo CD RBAC (**`policy.csv`**) and Dex GitHub connector (**no `orgs`** in this demo: any GitHub user may log in; **`argoproj-labs:gitops-promoter-approvers`** → **admin**)
+- Argo CD RBAC (**`policy.csv`**) and Dex GitHub connector (**`orgs`/`teams`** limit GitHub login to **`argoproj-labs` / `gitops-promoter-approvers`**; **`users.anonymous.enabled`** allows **readonly** without login; **`policy.csv`** maps that team → **admin**)
 - public hostnames
 - GitOps Promoter GitHub owner/repo references
 - secret names once you introduce real credentials
@@ -443,7 +443,9 @@ GitHub **[OAuth Apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-
 
 Under the app, create a **client secret**.
 
-**Org access (for approvers / team claims):** Any GitHub account can complete OAuth; **`policy.default`** is **readonly**. To resolve **`argoproj-labs:gitops-promoter-approvers`** into the **`groups`** claim for **admin**, GitHub must allow the OAuth app to read **`argoproj-labs`** org data—org owners approve under **Organization → Settings → Third-party access**, or the user grants org access when authorizing. Users who are not org members still sign in as **readonly**. If an approver has not granted org access, Dex may log **`application not authorized to read org data`**. See Dex’s [GitHub connector caveats](https://dexidp.io/docs/connectors/github/).
+**Anonymous UI:** **`users.anonymous.enabled`** is **true** in **`charts/argocd/values.yaml`**; unauthenticated users get **`policy.default`** (**`role:readonly`**) so the Argo CD UI is readable without signing in.
+
+**GitHub login (Dex):** **`dex.config`** lists **`orgs`** / **`teams`** so only members of **`argoproj-labs` / `gitops-promoter-approvers`** can complete GitHub OAuth. Those users receive **`groups`** matching **`policy.csv`** and get **admin**. Everyone else must use anonymous **readonly** (or **`admin`** / local break-glass—see below). The OAuth app must still be allowed to read **`argoproj-labs`** org data or Dex cannot verify team membership—see Dex’s [GitHub connector caveats](https://dexidp.io/docs/connectors/github/).
 
 **2. Seal credentials into the repo (exact path)**
 
@@ -468,10 +470,10 @@ Until that **`Secret`** exists, Dex may log errors about missing client credenti
 
 **3. Align org, team claims, and RBAC**
 
-- This demo’s **`dex.config`** omits **`orgs`**, so **any** GitHub user can authenticate. **`policy.default`** is **`role:readonly`**; only **`argoproj-labs:gitops-promoter-approvers`** maps to **`role:admin`** in **`policy.csv`**. Approvers still need the OAuth app authorized for **`argoproj-labs`** org data so Dex can emit that team in **`groups`** (see **Org access** above).
-- Dex’s default **`teamNameField`** (**`name`**) controls how **`org:team`** appears in **`groups`**. The **`g, …`** line in **`argo-cd.configs.rbac.policy.csv`** must match that claim. If approvers still get **readonly**, adjust **`policy.csv`** to the actual group string from the token.
+- **`dex.config`** uses **`orgs`** / **`teams`** plus **`teamNameField: slug`** so **`groups`** matches **`argoproj-labs:gitops-promoter-approvers`** in **`policy.csv`**. **`users.anonymous.enabled`** gives **readonly** without GitHub; GitHub sign-in is only for that team (**admin**).
+- If approvers still get **readonly** after OAuth, check org approval for the OAuth app and that **`policy.csv`** matches the actual **`groups`** claim (see **Org access** above).
 
-If you fork the repo, update the **`g, org:team, role:admin`** line and your GitHub OAuth app’s callback URL. To **restrict** who may log in (e.g. org or team only), add **`orgs`** (and optional **`teams`**) under **`dex.config`** ([Dex GitHub connector](https://dexidp.io/docs/connectors/github/)).
+If you fork the repo, update the **`g, org:team, role:admin`** line, **`orgs`/`teams`**, and your GitHub OAuth callback URL. To allow **any** GitHub user to sign in (not only a team), remove or widen **`orgs`** and rely on **`policy.default`** for non-admin users ([Dex GitHub connector](https://dexidp.io/docs/connectors/github/)).
 
 **4. If GitHub login still fails:** see [DEBUGGING.md](DEBUGGING.md#argo-cd-dex-login-failed).
 
