@@ -1,4 +1,6 @@
-# GitOps Promoter demo (GCP)
+# GitOps Promoter Demo
+
+This demo runs GitOps Promoter in the Argo CD UI. You can [see the UI](http://localhost:8080/applications/argocd/promoter-config?resource=&view=GitOps+Promoter&promotionstrategy=gitops-promoter%2Fdemo) by logging in via GitHub. You'll only have read access in the UI.
 
 Public-style demo that runs **[GitOps Promoter](https://gitops-promoter.readthedocs.io/)** on **GKE**: promotions across hydrated **Argo CD** environments (**`env/dev` → `env/e2e` → `env/prd`**), commit statuses, and a small **guestbook** app rendered by the [source hydrator](https://argo-cd.readthedocs.io/en/stable/user-guide/source-hydrator/).
 
