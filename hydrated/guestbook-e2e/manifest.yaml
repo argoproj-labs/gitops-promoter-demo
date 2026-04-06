@@ -53,3 +53,9 @@ spec:
             httpGet:
               path: /
               port: http
+          resources:
+            limits:
+              memory: 64Mi
+            requests:
+              cpu: 10m
+              memory: 16Mi
