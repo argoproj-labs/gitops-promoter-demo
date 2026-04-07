@@ -27,7 +27,7 @@ The initial bootstrap commit is focused on cluster foundations:
 
 Later commits can add:
 
-- **`charts/gitops-promoter/templates/github-app-credentials.sealed.yaml`** (GitHub App PEM) and edits to **`promoter-config/scm-provider.yaml`** / **`git-repository.yaml`** (**§12**)
+- **`charts/gitops-promoter/templates/github-app-credentials.sealed.yaml`** (GitHub App PEM) and edits to **`promoter-config-github/scm-provider.yaml`** / **`git-repository.yaml`** (**§12**); for the parallel GitLab guestbook project see **`docs/gitlab-demo-setup.md`**
 - GitOps Promoter `ScmProvider`, `GitRepository`, and `PromotionStrategy` resources (already in repo; need real IDs and secret)
 - sealed **repository-write**, **Git webhook HMAC**, and **Dex OAuth** credentials under **`charts/argocd/templates/*.sealed.yaml`** (same **`Application/argocd`** umbrella chart; **§8** / **§9**), plus **`env/dev`**, **`env/e2e`**, **`env/prd`** and **`env/dev-next`**, **`env/e2e-next`**, **`env/prd-next`** so the hydrator and GitOps Promoter can run
 - monitoring and dashboards
@@ -39,8 +39,8 @@ Paths you will touch when cloning, forking, or extending this demo:
 - `apps/`: bootstrap **`Application/root-app`** only; child apps are Helm templates in **`charts/apps/`** (single **`repoURL`** in **`charts/apps/values.yaml`** — keep **`apps/root-app.yaml`** `spec.source.repoURL` the same)
 - `demo-apps/guestbook/`: minimal in-tree Helm chart (Deployment + Service, **`gcr.io/google-samples/gb-frontend:v5`**). Guestbook **`Application`**s use [**source hydration**](https://argo-cd.readthedocs.io/en/stable/user-guide/source-hydrator/): Argo reads **`demo-apps/guestbook`** on **`HEAD`**, writes rendered YAML under **`hydrated/guestbook-{dev,e2e,prd}`** on each env’s **`env/<env>-next`** branch, and syncs from **`env/<env>`** after GitOps Promoter merges **`env/<env>-next` → `env/<env>`**. Per-env replica counts use **`demo-apps/guestbook/env/{dev,e2e,prd}/values.yaml`**
 - `charts/`: umbrella charts and Helm values (each chart may include `Chart.lock` from `helm dependency build`). Argo CD–related **SealedSecret** manifests live in **`charts/argocd/templates/`** (Dex OAuth, Git webhook HMAC, hydrator **repository-write**); GitOps Promoter’s GitHub App PEM is **`charts/gitops-promoter/templates/github-app-credentials.sealed.yaml`**, applied with the **`gitops-promoter`** Application. **`charts/monitoring/`** wraps **[kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack)** (Prometheus Operator, Prometheus, Alertmanager, Grafana) into namespace **`monitoring`** (**`Application/monitoring`**, sync wave **1**).
-- `manifests/`: raw Kubernetes manifests applied by Argo CD (top-level YAML is synced by **`demo-config`** into `gitops-promoter`; **`manifests/demo-churn/`** syncs into **`argocd`** via **`Application/demo-churn`** — CronJob that bumps **`demo-apps/guestbook/values.yaml`** `demoChurn.lastBumped` via the same GitHub App write **`Secret`** as the hydrator)
-- `promoter-config/`: GitOps Promoter CRs applied with **`Application/promoter-config`** into **`gitops-promoter`**. One **`ArgoCDCommitStatus`** (**`commit-statuses/argocd-commit-status.yaml`**) selects all guestbook **`Application`**s via **`app.kubernetes.io/name: guestbook`**; the controller maps each app to an environment from **`spec.sourceHydrator.syncSource.targetBranch`** (hydrated guestbook apps) and emits **`argocd-health`** commit statuses ([docs](https://gitops-promoter.readthedocs.io/en/latest/commit-status-controllers/argocd/)). **`TimedCommitStatus`** (**`commit-statuses/timed-commit-status.yaml`**) must list **every** environment branch that uses the **`timer`** gate—same **`branch`** values as **`PromotionStrategy.spec.environments`**—or that environment never gets a timer check on GitHub ([timed controller](https://gitops-promoter.readthedocs.io/en/latest/commit-status-controllers/timed/)). **`PromotionStrategy`** uses **`activeCommitStatuses`** (**`argocd-health`**, **`timer`**) and **`promoter-previous-environment`** ([gating](https://gitops-promoter.readthedocs.io/en/latest/gating-promotions/)).
+- `manifests/`: raw Kubernetes manifests applied by Argo CD (top-level YAML is synced by **`demo-config`** into `gitops-promoter`, **excluding** **`demo-churn/**`**). **`Application/demo-churn`** syncs **`manifests/demo-churn/`** (recursive) into **`argocd`**: **`github/`** CronJob bumps **`demoChurn.lastBumped`** on the GitHub bootstrap repo (GitHub App, same hydrator write **`Secret`**); **`gitlab/`** CronJob bumps the same field on the GitLab guestbook repo (project access token).
+- `promoter-config-github/`, `promoter-config-gitlab/`: GitOps Promoter CRs applied with **`Application/promoter-config-github`** / **`promoter-config-gitlab`**. Each tree has its own **`ArgoCDCommitStatus`** and **`TimedCommitStatus`**, scoped with **`demos.gitops-promoter.dev/instance: github|gitlab`** so controllers do not mix the two guestbook fleets ([Argo CD commit status controller](https://gitops-promoter.readthedocs.io/en/latest/commit-status-controllers/argocd/), [timed](https://gitops-promoter.readthedocs.io/en/latest/commit-status-controllers/timed/), [gating](https://gitops-promoter.readthedocs.io/en/latest/gating-promotions/)).
 - `infra/gcp/terraform/`: OpenTofu/Terraform HCL for GCP networking and GKE
 - `infra/gcp/check-prereqs.sh`: local environment check script
 - `infra/gcp/get-ingress-lb-ip.sh`: print ingress-nginx load balancer IP for DNS A records
@@ -91,8 +91,9 @@ At minimum, update:
 - `charts/argocd/values.yaml`
 - `charts/gitops-promoter/values.yaml`
 - `charts/monitoring/values.yaml`
-- `promoter-config/git-repository.yaml`
-- `promoter-config/scm-provider.yaml`
+- `promoter-config-github/git-repository.yaml`
+- `promoter-config-github/scm-provider.yaml`
+- (optional) `promoter-config-gitlab/*` and `charts/apps/values.yaml` **`guestbookGitLabRepoURL`** — see **`docs/gitlab-demo-setup.md`**
 
 Things you will almost certainly change:
 
@@ -393,9 +394,9 @@ Commit that sealed file. It ships with the **`Application/argocd`** umbrella (sa
 
 ### Promoter demo churn (CronJob)
 
-**`Application/demo-churn`** (from **`charts/apps`**) syncs **`manifests/demo-churn/`** into **`argocd`** (wave **6**): a **`CronJob`** runs every **15 minutes**, installs **`PyJWT`** + **`requests`** in the job container, and uses the **same** **`Secret/argocd-repo-gitops-promoter-write`** (keys **`githubAppID`**, **`url`**, **`githubAppPrivateKey`**, optional **`githubAppInstallationID`**) to call the [GitHub Contents API](https://docs.github.com/en/rest/repos/contents#create-or-update-file-contents). It patches **`demoChurn.lastBumped`** in **`demo-apps/guestbook/values.yaml`** (shared Helm values), which changes rendered **`Deployment`** pod annotations for **dev**, **e2e**, and **prd** guestbook apps after hydration. Commits use subjects like **`chore: promoter demo churn …`** for a conventional style only; promotion is not gated on that text in this demo.
+**`Application/demo-churn`** (from **`charts/apps`**, wave **6**) syncs **`manifests/demo-churn/`** recursively into **`argocd`**. The **GitHub** CronJob under **`github/`** runs every **15 minutes**, installs **`PyJWT`** + **`requests`**, and uses **`Secret/argocd-repo-gitops-promoter-write`** to call the [GitHub Contents API](https://docs.github.com/en/rest/repos/contents#create-or-update-file-contents), patching **`demoChurn.lastBumped`** in **`demo-apps/guestbook/values.yaml`** on **GitHub** (pod annotations for **`guestbook-github-*`** after hydration). The **GitLab** CronJob under **`gitlab/`** uses **`Secret/gitlab-demo-churn-credentials`** (a **SealedSecret** under **`charts/argocd/templates/`**, applied by **`Application/argocd`**) and the [GitLab Repository Files API](https://docs.gitlab.com/ee/api/repository_files.html); see **`docs/gitlab-demo-setup.md`**.
 
-If **`githubAppInstallationID`** is omitted from the Secret, the script discovers an installation that can access the repo from **`url`** (first match). If your default branch is not **`main`**, patch **`manifests/demo-churn/cronjob.yaml`** env **`GITHUB_DEFAULT_BRANCH`**. The job stays **Pending**/**Error** until the hydrator write **`Secret`** exists.
+If **`githubAppInstallationID`** is omitted from the GitHub write Secret, the script discovers an installation that can access the repo from **`url`** (first match). If your default branch is not **`main`**, patch **`manifests/demo-churn/github/cronjob.yaml`** env **`GITHUB_DEFAULT_BRANCH`**. The GitHub job stays **Pending**/**Error** until the hydrator write **`Secret`** exists.
 
 **Repository settings:** ensure GitHub does **not** auto-delete **`*-next`** branches when PRs merge (Promoter relies on them). Prefer disabling **Automatically delete head branches** or add branch protection for a pattern such as **`env/**`** ([Promoter note](https://gitops-promoter.readthedocs.io/en/latest/getting-started/#github-app-configuration)).
 
@@ -565,7 +566,7 @@ You should see these namespaces/components coming up:
 
 ## 12. GitOps Promoter: GitHub App, sealed credentials, and Git repository
 
-The bootstrap install includes **`Application/monitoring`** (wave **1**) so Prometheus Operator CRDs exist before the controller (**`Application/gitops-promoter`** from **`charts/apps`**, wave **3**) creates its **`ServiceMonitor`**. It also includes the **`promoter-config`** Application (wave **4**), which syncs **`promoter-config/`** recursively into **`gitops-promoter`**. Until you add a real GitHub App and secret, **`ScmProvider`** and friends will not be able to talk to GitHub.
+The bootstrap install includes **`Application/monitoring`** (wave **1**) so Prometheus Operator CRDs exist before the controller (**`Application/gitops-promoter`** from **`charts/apps`**, wave **3**) creates its **`ServiceMonitor`**. It also includes **`Application/promoter-config-github`** and **`promoter-config-gitlab`** (wave **4**), which sync **`promoter-config-github/`** and **`promoter-config-gitlab/`** into **`gitops-promoter`**. Until you add a real GitHub App and secret, the GitHub **`ScmProvider`** will not talk to GitHub; the GitLab path needs **`gitlab-scm-credentials`** per **`docs/gitlab-demo-setup.md`**.
 
 Official reference: [GitOps Promoter getting started](https://gitops-promoter.readthedocs.io/en/latest/getting-started/) (permissions, `Secret` shape, `ScmProvider` / `GitRepository`).
 
@@ -580,17 +581,17 @@ Official reference: [GitOps Promoter getting started](https://gitops-promoter.re
 
 3. **Webhook secret (GitHub):** For the Argo-targeted URL, use a strong secret and seal it per **§8**. For Promoter-only URLs, GitHub may still offer a signing secret, but the controller does not validate it yet (same caveats as above).
 4. Generate and download a **private key** (`.pem`).
-5. Note the app’s **App ID** (numeric). **Install** the **GitHub App** on the user or organization that owns the repositories GitOps Promoter will use via the API (see below). Note **Installation ID** if you want to pin it (optional on `ScmProvider`; see **`promoter-config/scm-provider.yaml`**).
+5. Note the app’s **App ID** (numeric). **Install** the **GitHub App** on the user or organization that owns the repositories GitOps Promoter will use via the API (see below). Note **Installation ID** if you want to pin it (optional on `ScmProvider`; see **`promoter-config-github/scm-provider.yaml`**).
 
 **Which repositories must the installation include?**
 
-- **Required:** every GitHub repository the Promoter mutates via the API — at minimum, whatever you name in **`promoter-config/git-repository.yaml`** (this demo: **`owner/gitops-promoter-demo`** — the same repo as bootstrap). Install the GitHub App on that repo (or use **All repositories** in a sandbox).
+- **Required:** every GitHub repository the Promoter mutates via the API — at minimum, whatever you name in **`promoter-config-github/git-repository.yaml`** (this demo: **`owner/gitops-promoter-demo`** — the same repo as bootstrap). Install the GitHub App on that repo (or use **All repositories** in a sandbox).
 - **Argo CD** clones this repo (anonymous if **public**); the **hydrator push** **`Secret`** (**§8**) is still required to write hydrated commits. The **GitHub App** on **`ScmProvider`** is what Promoter uses for API access—often the same installation as the hydrator **write** secret.
 - When you click **Install**, choose **Only select repositories** and include the repo from **`git-repository.yaml`** and any other repos your **`PromotionStrategy`** targets. **All repositories** is simpler for sandboxes but broader than necessary.
 
 ### 12.2 Repository and branches
 
-1. Use the GitHub repo named in **`promoter-config/git-repository.yaml`** (this demo: **`argoproj-labs/gitops-promoter-demo`** — change **`owner`** / **`name`** if you fork under a different path).
+1. Use the GitHub repo named in **`promoter-config-github/git-repository.yaml`** (this demo: **`argoproj-labs/gitops-promoter-demo`** — change **`owner`** / **`name`** if you fork under a different path).
 2. **`promotion-strategy.yaml`** expects merge targets **`env/dev`**, **`env/e2e`**, and **`env/prd`**. Your hydrator / promotion flow must match the [branch conventions](https://gitops-promoter.readthedocs.io/en/latest/getting-started/#promotion-strategy) the project documents (including **`env/<env>-next`** hydration branches). Align branch names here with what you actually create in Git.
 
 ### 12.3 Seal the GitHub App private key (same Application as promoter CRs)
@@ -614,9 +615,9 @@ Commit **`charts/gitops-promoter/templates/github-app-credentials.sealed.yaml`**
 
 ### 12.4 Wire non-secret IDs in Git
 
-Edit **`promoter-config/scm-provider.yaml`**: set **`spec.github.appID`** to your numeric App ID. Uncomment and set **`installationID`** only if you need to pin a single installation.
+Edit **`promoter-config-github/scm-provider.yaml`**: set **`spec.github.appID`** to your numeric App ID. Uncomment and set **`installationID`** only if you need to pin a single installation.
 
-Edit **`promoter-config/git-repository.yaml`** if **`owner`** / **`name`** differ from the GitHub repository that holds **`demo-apps/guestbook`** and the **`env/...`** promotion branches (normally your **`gitops-promoter-demo`** fork).
+Edit **`promoter-config-github/git-repository.yaml`** if **`owner`** / **`name`** differ from the GitHub repository that holds **`demo-apps/guestbook`** and the **`env/...`** promotion branches (normally your **`gitops-promoter-demo`** fork).
 
 Push; after sync, **`kubectl -n gitops-promoter get sealedsecret,secret,scmprovider`** should show the decoded **`Secret`** and a healthy **`ScmProvider`**.
 
@@ -627,13 +628,14 @@ Push; after sync, **`kubectl -n gitops-promoter get sealedsecret,secret,scmprovi
 - Argo CD Git webhook HMAC: **§8** → **`charts/argocd/templates/argocd-github-webhook.sealed.yaml`**.
 - Argo CD Dex GitHub OAuth: **§9** → **`charts/argocd/templates/argocd-dex-github.sealed.yaml`**.
 - Hydrator **repository-write**: **§8** → **`charts/argocd/templates/argocd-repo-gitops-promoter-write.sealed.yaml`**.
+- GitLab guestbook hydrator **repository-write** and **`gitlab-demo-churn-credentials`**: **`docs/gitlab-demo-setup.md`** → **`charts/argocd/templates/argocd-repo-gitlab-guestbook-write.sealed.yaml`**, **`gitlab-demo-churn-credentials.sealed.yaml`**.
 
 ### 12.6 Checklist (other prerequisites)
 
 1. Create GitHub App, **install** it with access to the repo in **`git-repository.yaml`** (see **§12.1**). By default point the app webhook at **Argo CD** (**`https://demo.<your-domain>/api/webhook`**); use a **second** app with **`promoter-webhook.<your-domain>`** only when you want a dedicated Promoter webhook (for example after Promoter verifies signatures).
 2. Ensure branches in that repo match **`promotion-strategy.yaml`** (and your hydrator).
 3. Seal and commit **`charts/gitops-promoter/templates/github-app-credentials.sealed.yaml`**.
-4. Set **`appID`** (and optionally **`installationID`**) in **`promoter-config/scm-provider.yaml`**; fix **`git-repository.yaml`** owner/name.
+4. Set **`appID`** (and optionally **`installationID`**) in **`promoter-config-github/scm-provider.yaml`**; fix **`git-repository.yaml`** owner/name.
 5. Optional: **§8** / **§9** sealed files for Argo CD.
 
 ## 13. Suggested first commits
@@ -643,10 +645,10 @@ A clean sequence is:
 1. **Bootstrap commit**
    - `apps/root-app.yaml` and **`charts/apps/`** (Helm chart of child **`Application`**s; Argo / Promoter sealed files can land in follow-up commits under **`charts/argocd/templates/`** and **`charts/gitops-promoter/templates/`**)
    - `charts/` (other umbrella charts)
-   - `manifests/` (including **`manifests/demo-churn/`** once you add the demo churn stack)
+   - `manifests/` (excluding **`demo-churn/**`**; churn syncs via **`Application/demo-churn`**)
 2. **Promoter config + secrets commit**
-   - `promoter-config/` (CRs only; **`charts/gitops-promoter/templates/github-app-credentials.sealed.yaml`** when the GitHub App exists; wire via **`Application/promoter-config`** in **`charts/apps`**)
-   - other sealed secrets as needed under **`charts/argocd/templates/`** (webhook, Dex, hydrator write)
+   - `promoter-config-github/`, `promoter-config-gitlab/` (CRs; **`charts/gitops-promoter/templates/github-app-credentials.sealed.yaml`** when the GitHub App exists; GitLab token **`gitlab-scm-credentials`** per **`docs/gitlab-demo-setup.md`**)
+   - other sealed secrets as needed under **`charts/argocd/templates/`** (webhook, Dex, GitHub hydrator write, GitLab guestbook write + churn per **`docs/gitlab-demo-setup.md`**)
 3. **Demo workloads commit**
    - `demo-apps/guestbook/` and guestbook **`Application`** templates under **`charts/apps/templates/`**
 4. **Monitoring commit**

@@ -1,7 +1,7 @@
 apiVersion: promoter.argoproj.io/v1alpha1
 kind: ScmProvider
 metadata:
-  name: demo-scm
+  name: demo-scm-github
   namespace: gitops-promoter
 spec:
   github:
@@ -13,4 +13,3 @@ spec:
   secretRef:
     # PEM lives in SealedSecret → Secret; see SETUP.md §12 (charts/gitops-promoter/templates/).
     name: github-app-credentials
-

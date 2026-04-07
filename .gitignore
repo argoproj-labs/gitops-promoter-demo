@@ -17,4 +17,5 @@ charts/**/charts/*.tgz
 .helm-cache/
 
 # GitHub App PEMs for GitOps Promoter — seal into charts/gitops-promoter/templates/; never commit plaintext
-promoter-config/**/*.pem
+promoter-config-github/**/*.pem
+promoter-config-gitlab/**/*.pem

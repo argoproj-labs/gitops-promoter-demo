@@ -1,17 +1,16 @@
-# Pushes trivial commits to the bootstrap repo using the same GitHub App write Secret as the Argo CD source hydrator.
+# Pushes trivial commits to the GitHub bootstrap repo using the same GitHub App write Secret as the Argo CD source hydrator.
 # Requires Secret/argocd-repo-gitops-promoter-write (see SETUP.md §8).
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: demo-churn
+  name: demo-churn-github
   namespace: argocd
   labels:
-    app.kubernetes.io/name: demo-churn
+    app.kubernetes.io/name: demo-churn-github
     app.kubernetes.io/part-of: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "6"
 spec:
-  # Every 15 minutes; adjust as needed.
   schedule: "*/15 * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
@@ -23,14 +22,14 @@ spec:
       template:
         metadata:
           labels:
-            app.kubernetes.io/name: demo-churn
+            app.kubernetes.io/name: demo-churn-github
         spec:
-          serviceAccountName: demo-churn
+          serviceAccountName: demo-churn-github
           restartPolicy: OnFailure
           volumes:
             - name: script
               configMap:
-                name: demo-churn-script
+                name: demo-churn-github-script
                 defaultMode: 0755
             - name: github-app-key
               secret:
@@ -66,7 +65,6 @@ spec:
                       name: argocd-repo-gitops-promoter-write
                       key: githubAppInstallationID
                       optional: true
-                # Must match the default branch GitHub uses for the repo (main vs master).
                 - name: GITHUB_DEFAULT_BRANCH
                   value: main
                 - name: CHURN_FILE_PATH

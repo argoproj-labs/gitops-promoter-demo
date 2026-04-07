@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-churn-gitlab-script
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: demo-churn-gitlab
+    app.kubernetes.io/part-of: argocd
+data:
+  churn.py: |
+    #!/usr/bin/env python3
+    """Bump demoChurn.lastBumped in a file on GitLab (default branch) via GitLab REST API."""
+    from __future__ import annotations
+
+    import json
+    import os
+    import re
+    import sys
+    from datetime import datetime, timezone
+    from urllib.parse import quote
+
+    import requests
+
+    API = os.environ.get("GITLAB_API_URL", "https://gitlab.com/api/v4").rstrip("/")
+    FILE_PATH = os.environ.get("CHURN_FILE_PATH", "demo-apps/guestbook/values.yaml")
+    BRANCH = os.environ.get("GITLAB_DEFAULT_BRANCH", "main")
+
+
+    def bump_demo_churn_timestamp(yaml_text: str, iso: str) -> str:
+        new_text, n = re.subn(
+            r'(lastBumped:\s*")[^"]*(")',
+            rf"\g<1>{iso}\g<2>",
+            yaml_text,
+            count=1,
+        )
+        if n != 1:
+            raise ValueError(
+                f"expected exactly one lastBumped string in {FILE_PATH!r} for demo churn bump"
+            )
+        return new_text
+
+
+    def main() -> None:
+        token = os.environ["GITLAB_TOKEN"]
+        project_id = os.environ["GITLAB_PROJECT_ID"]
+        path_enc = quote(FILE_PATH, safe="")
+        headers = {"PRIVATE-TOKEN": token}
+
+        url = f"{API}/projects/{project_id}/repository/files/{path_enc}"
+        r = requests.get(url, headers=headers, params={"ref": BRANCH}, timeout=120)
+        if r.status_code == 404:
+            print(
+                "File not found on GitLab; push gitlab-seed/ content first — see docs/gitlab-demo-setup.md",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        r.raise_for_status()
+        blob = r.json()
+        raw = blob["content"]
+        if blob.get("encoding") == "base64":
+            import base64
+
+            raw = base64.b64decode(raw).decode()
+        iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        new_text = bump_demo_churn_timestamp(raw, iso)
+        if new_text == raw:
+            print("No lastBumped change; skipping commit")
+            return
+
+        last_commit_id = blob.get("last_commit_id")
+        body = {
+            "branch": BRANCH,
+            "content": new_text,
+            "commit_message": f"chore: promoter demo churn (gitlab) {iso}",
+            "encoding": "text",
+        }
+        if last_commit_id:
+            body["last_commit_id"] = last_commit_id
+
+        put = requests.put(url, headers=headers, data=json.dumps(body), timeout=120)
+        put.raise_for_status()
+        print("Committed on", BRANCH, "file", FILE_PATH)
+
+
+    if __name__ == "__main__":
+        try:
+            main()
+        except (requests.HTTPError, ValueError, KeyError, OSError) as e:
+            print(e, file=sys.stderr)
+            if isinstance(e, requests.HTTPError) and e.response is not None:
+                print(e.response.text[:500], file=sys.stderr)
+            sys.exit(1)

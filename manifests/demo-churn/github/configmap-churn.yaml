@@ -1,9 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: demo-churn-script
+  name: demo-churn-github-script
   namespace: argocd
   labels:
+    app.kubernetes.io/name: demo-churn-github
     app.kubernetes.io/part-of: argocd
 data:
   churn.py: |

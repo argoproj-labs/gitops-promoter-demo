@@ -1,0 +1,14 @@
+apiVersion: promoter.argoproj.io/v1alpha1
+kind: GitRepository
+metadata:
+  name: demo-config-gitlab
+  namespace: gitops-promoter
+spec:
+  gitlab:
+    namespace: gitops-promoter-group
+    name: gitops-promoter-project
+    # Resolved from https://gitlab.com/gitops-promoter-group/gitops-promoter-project (public API id).
+    projectId: 81067674
+  scmProviderRef:
+    kind: ScmProvider
+    name: demo-scm-gitlab

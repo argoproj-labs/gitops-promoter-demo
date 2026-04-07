@@ -11,6 +11,10 @@ spec:
     repoURL: {{ .Values.repoURL | quote }}
     targetRevision: HEAD
     path: manifests
+    directory:
+      recurse: true
+      # Churn CronJobs sync via Application/demo-churn (manifests/demo-churn/**).
+      exclude: "{demo-churn/**}"
   destination:
     server: https://kubernetes.default.svc
     namespace: gitops-promoter

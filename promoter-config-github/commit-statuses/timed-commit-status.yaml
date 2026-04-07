@@ -1,11 +1,11 @@
 apiVersion: promoter.argoproj.io/v1alpha1
 kind: TimedCommitStatus
 metadata:
-  name: timed-5m
+  name: timed-5m-github
   namespace: gitops-promoter
 spec:
   promotionStrategyRef:
-    name: demo
+    name: demo-github
   # Must list every environment branch that participates in timer gating (must match PromotionStrategy.spec.environments[].branch).
   # Omitting a branch (e.g. env/dev) leaves activeCommitStatuses key "timer" unsatisfied for that env — no GitHub check is created.
   environments:
@@ -15,4 +15,3 @@ spec:
       duration: 5m
     - branch: env/prd
       duration: 5m
-

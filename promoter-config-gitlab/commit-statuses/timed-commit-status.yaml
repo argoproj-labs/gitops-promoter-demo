@@ -1,0 +1,15 @@
+apiVersion: promoter.argoproj.io/v1alpha1
+kind: TimedCommitStatus
+metadata:
+  name: timed-5m-gitlab
+  namespace: gitops-promoter
+spec:
+  promotionStrategyRef:
+    name: demo-gitlab
+  environments:
+    - branch: env/dev
+      duration: 5m
+    - branch: env/e2e
+      duration: 5m
+    - branch: env/prd
+      duration: 5m

@@ -71,7 +71,7 @@ kubectl -n monitoring get sts,pods -l app.kubernetes.io/name=prometheus
 
 **Cause:** The replacement string used `rf"\1{iso}\2"`. In `re.sub`, **`\1` followed by digits** is parsed as an **octal** escape (e.g. `\120` → **`P`**), not “group 1 + timestamp”.
 
-**Fix (in repo):** `rf"\g<1>{iso}\g<2>"` in **`manifests/demo-churn/configmap-churn.yaml`**. Repair **`demo-apps/guestbook/values.yaml`** so **`demoChurn.lastBumped`** is again a single quoted ISO line; sync the updated **ConfigMap** before the next job run.
+**Fix (in repo):** `rf"\g<1>{iso}\g<2>"` in **`manifests/demo-churn/github/configmap-churn.yaml`** (GitHub) or **`manifests/demo-churn/gitlab/configmap-churn.yaml`** (GitLab). Repair the guestbook **`values.yaml`** on the repo that job targets so **`demoChurn.lastBumped`** is again a single quoted ISO line; sync the updated **ConfigMap** before the next job run.
 
 ---
 
@@ -79,7 +79,7 @@ kubectl -n monitoring get sts,pods -l app.kubernetes.io/name=prometheus
 
 **Cause:** **`PromotionStrategy`** lists **`timer`** in **`activeCommitStatuses`**, but **`TimedCommitStatus.spec.environments`** omitted a branch. The timed controller only creates GitHub checks for branches it knows about.
 
-**Fix:** List **every** gated branch under **`TimedCommitStatus`** with the same names as **`PromotionStrategy.spec.environments[].branch`** (see **`promoter-config/commit-statuses/timed-commit-status.yaml`**).
+**Fix:** List **every** gated branch under **`TimedCommitStatus`** with the same names as **`PromotionStrategy.spec.environments[].branch`** (see **`promoter-config-github/commit-statuses/timed-commit-status.yaml`** and **`promoter-config-gitlab/commit-statuses/timed-commit-status.yaml`**).
 
 ---
 

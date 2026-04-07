@@ -1,0 +1,12 @@
+apiVersion: promoter.argoproj.io/v1alpha1
+kind: ScmProvider
+metadata:
+  name: demo-scm-gitlab
+  namespace: gitops-promoter
+spec:
+  gitlab:
+    domain: gitlab.com
+  secretRef:
+    # Create Secret/gitlab-scm-credentials in gitops-promoter with key "token" (project access token).
+    # See docs/gitlab-demo-setup.md
+    name: gitlab-scm-credentials

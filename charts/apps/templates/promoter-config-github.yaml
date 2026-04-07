@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: promoter-config
+  name: promoter-config-github
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "4"
@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: {{ .Values.repoURL | quote }}
     targetRevision: HEAD
-    path: promoter-config
+    path: promoter-config-github
     directory:
       recurse: true
   destination:

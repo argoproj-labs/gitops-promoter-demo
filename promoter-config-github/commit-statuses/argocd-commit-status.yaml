@@ -7,11 +7,12 @@
 apiVersion: promoter.argoproj.io/v1alpha1
 kind: ArgoCDCommitStatus
 metadata:
-  name: demo-argocd-health
+  name: demo-github-argocd-health
   namespace: gitops-promoter
 spec:
   promotionStrategyRef:
-    name: demo
+    name: demo-github
   applicationSelector:
     matchLabels:
       app.kubernetes.io/name: guestbook
+      demos.gitops-promoter.dev/instance: github

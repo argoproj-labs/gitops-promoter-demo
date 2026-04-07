@@ -1,7 +1,7 @@
 apiVersion: promoter.argoproj.io/v1alpha1
 kind: GitRepository
 metadata:
-  name: demo-config
+  name: demo-config-github
   namespace: gitops-promoter
 spec:
   github:
@@ -9,4 +9,4 @@ spec:
     name: gitops-promoter-demo
   scmProviderRef:
     kind: ScmProvider
-    name: demo-scm
+    name: demo-scm-github

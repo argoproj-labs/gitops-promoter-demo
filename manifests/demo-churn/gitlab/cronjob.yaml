@@ -1,0 +1,65 @@
+# Bumps guestbook values on the GitLab guestbook-only repo (project access token).
+# Requires Secret/gitlab-demo-churn-credentials in argocd (key: token; SealedSecret in charts/argocd/templates/). See docs/gitlab-demo-setup.md
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: demo-churn-gitlab
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: demo-churn-gitlab
+    app.kubernetes.io/part-of: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 7200
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: demo-churn-gitlab
+        spec:
+          serviceAccountName: demo-churn-gitlab
+          restartPolicy: OnFailure
+          volumes:
+            - name: script
+              configMap:
+                name: demo-churn-gitlab-script
+                defaultMode: 0755
+          containers:
+            - name: churn
+              image: python:3.12-slim-bookworm
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  pip install --no-cache-dir --disable-pip-version-check "requests==2.32.3"
+                  exec python /scripts/churn.py
+              env:
+                - name: GITLAB_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: gitlab-demo-churn-credentials
+                      key: token
+                - name: GITLAB_PROJECT_ID
+                  value: "81067674"
+                - name: GITLAB_DEFAULT_BRANCH
+                  value: main
+                - name: CHURN_FILE_PATH
+                  value: demo-apps/guestbook/values.yaml
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  memory: 384Mi

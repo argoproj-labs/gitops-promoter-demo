@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: guestbook-github-prd
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: guestbook
+    guestbook-env: prd
+    demos.gitops-promoter.dev/instance: github
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+    promoter.argoproj.io/has-promotionstrategy: "true"
+spec:
+  project: default
+  sourceHydrator:
+    drySource:
+      repoURL: {{ .Values.repoURL | quote }}
+      targetRevision: HEAD
+      path: demo-apps/guestbook
+      helm:
+        releaseName: guestbook-github-prd
+        valueFiles:
+          - env/prd/values.yaml
+    syncSource:
+      targetBranch: env/prd
+      path: hydrated/guestbook-github-prd
+    hydrateTo:
+      targetBranch: env/prd-next
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: guestbook-github-prd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
