@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: gitops-promoter
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
   annotations:
     # After monitoring (1) so Prometheus Operator CRDs exist for ServiceMonitor.
     argocd.argoproj.io/sync-wave: "3"

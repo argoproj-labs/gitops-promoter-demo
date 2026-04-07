@@ -4,8 +4,8 @@ metadata:
   name: demo-scm-gitlab
   namespace: gitops-promoter
 spec:
-  gitlab:
-    domain: gitlab.com
+  # SaaS gitlab.com: omit domain (setting "gitlab.com" is rejected by the API).
+  gitlab: {}
   secretRef:
     # Create Secret/gitlab-scm-credentials in gitops-promoter with key "token" (project access token).
     # See docs/gitlab-demo-setup.md

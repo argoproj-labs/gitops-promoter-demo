@@ -49,7 +49,7 @@ Paths you will touch when cloning, forking, or extending this demo:
 ## Conventions
 
 - Argo CD applications use **single-source** `spec.source`, not multi-source apps, **except** the guestbook env **`Application`**s, which use **`spec.sourceHydrator`** so GitOps Promoter can gate on hydrated branches ([source hydrator](https://argo-cd.readthedocs.io/en/stable/user-guide/source-hydrator/)).
-- **`Application/root-app`** and every child app rendered from **`charts/apps`** use **automated** sync with **`prune: true`** and **`selfHeal: true`**.
+- **`Application/root-app`** and every child app rendered from **`charts/apps/templates/`** use **automated** sync with **`prune: true`** and **`selfHeal: true`**, and **`metadata.finalizers`** including **`resources-finalizer.argocd.argoproj.io`**, so deleting an **`Application`** cascades removal of its managed resources ([Argo CD deletion finalizer](https://argo-cd.readthedocs.io/en/stable/user-guide/app_deletion/#about-the-deletion-finalizer)).
 - Helm deployments come from **in-repo umbrella charts**.
 - OpenTofu inputs for GCP live in **`infra/gcp/terraform/terraform.tfvars`** (committed in this demo repo; forks should replace `project_id`, `project_name`, and `billing_account` with their own values).
 - **GitOps first:** change the cluster by committing to this repository and letting Argo CD sync. Avoid `kubectl apply`, `kubectl patch`, or ad-hoc edits to workloads except in a real break-glass situation (for example, Argo CD cannot reconcile and you need a one-time repair).

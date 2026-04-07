@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: guestbook-gitlab-e2e
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
   labels:
     app.kubernetes.io/name: guestbook
     guestbook-env: e2e
