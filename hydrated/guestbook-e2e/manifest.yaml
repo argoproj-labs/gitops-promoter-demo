@@ -33,7 +33,7 @@ spec:
   template:
     metadata:
       annotations:
-        guestbook.demo/gitops-promoter-churn: "2026-04-07T11:30:07Z"
+        guestbook.demo/gitops-promoter-churn: "2026-04-07T11:45:07Z"
       labels:
         app.kubernetes.io/instance: guestbook-e2e
         app.kubernetes.io/name: guestbook
