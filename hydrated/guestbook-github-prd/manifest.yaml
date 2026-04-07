@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: guestbook-github-prd
+    app.kubernetes.io/name: guestbook
+    helm.sh/chart: guestbook-0.1.0
+  name: guestbook-github-prd
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  selector:
+    app.kubernetes.io/instance: guestbook-github-prd
+    app.kubernetes.io/name: guestbook
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: guestbook-github-prd
+    app.kubernetes.io/name: guestbook
+    helm.sh/chart: guestbook-0.1.0
+  name: guestbook-github-prd
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: guestbook-github-prd
+      app.kubernetes.io/name: guestbook
+  template:
+    metadata:
+      annotations:
+        guestbook.demo/gitops-promoter-churn: "2026-04-07T21:45:07Z"
+      labels:
+        app.kubernetes.io/instance: guestbook-github-prd
+        app.kubernetes.io/name: guestbook
+    spec:
+      containers:
+        - image: gcr.io/google-samples/gb-frontend:v5
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          name: guestbook
+          ports:
+            - containerPort: 80
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            limits:
+              memory: 64Mi
+            requests:
+              cpu: 10m
+              memory: 16Mi
