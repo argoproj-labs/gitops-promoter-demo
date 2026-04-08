@@ -8,7 +8,7 @@ This stack creates a dedicated GCP project and a regional GKE cluster for the de
 - Required Google APIs
 - Custom VPC + subnet with secondary ranges
 - Regional GKE cluster (HA-oriented default)
-- Autoscaling node pool
+- Autoscaling node pool (**Spot** VMs by default; regional **`min_node_count`** / **`max_node_count`** apply **per zone**—see `locals` in `main.tf`)
 
 ## Prerequisites
 

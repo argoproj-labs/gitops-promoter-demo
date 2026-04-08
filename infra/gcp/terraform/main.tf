@@ -24,8 +24,12 @@ locals {
   node_machine_type = "e2-standard-2"
   node_disk_size_gb   = 100
   node_disk_type      = "pd-standard"
-  node_count_min      = 2
-  node_count_max      = 4
+  # Regional cluster: min/max apply **per zone** (us-central1 → 3 zones). min=2 ⇒ 6 VMs minimum; min=1 ⇒ 3 VMs.
+  node_count_min = 1
+  # Cap scale-out cost (per zone); 2 ⇒ at most 6 nodes regional.
+  node_count_max = 2
+  # Spot VMs: large discount; nodes may be preempted (workloads reschedule). No cluster recreate—pool update only.
+  node_spot = true
 }
 
 resource "google_project" "demo" {
@@ -72,8 +76,9 @@ resource "google_container_cluster" "demo" {
   name       = local.cluster_name
   location   = local.region
   project    = google_project.demo.project_id
-  network    = google_compute_network.demo.name
-  subnetwork = google_compute_subnetwork.demo.name
+  # self_link matches API state; short names often drift to full URLs in refresh and can show huge diffs.
+  network    = google_compute_network.demo.self_link
+  subnetwork = google_compute_subnetwork.demo.self_link
 
   deletion_protection = false
 
@@ -96,7 +101,8 @@ resource "google_container_cluster" "demo" {
   initial_node_count       = 1
 
   node_config {
-    # Must match the cluster’s stored default-pool shape or plan wants an in-place update.
+    # Required at create; after remove_default_node_pool the API/provider often diverge on this block.
+    # Spot belongs on google_container_node_pool only (cluster-level spot forces replacement).
     machine_type = local.node_machine_type
     disk_size_gb = local.node_disk_size_gb
     disk_type    = local.node_disk_type
@@ -104,6 +110,10 @@ resource "google_container_cluster" "demo" {
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
+  }
+
+  lifecycle {
+    ignore_changes = [node_config]
   }
 
   depends_on = [google_project_service.required]
@@ -130,6 +140,7 @@ resource "google_container_node_pool" "primary" {
     machine_type = local.node_machine_type
     disk_size_gb = local.node_disk_size_gb
     disk_type    = local.node_disk_type
+    spot         = local.node_spot
 
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
@@ -139,5 +150,11 @@ resource "google_container_node_pool" "primary" {
       environment = "demo"
       workload    = "gitops-promoter"
     }
+  }
+
+  timeouts {
+    create = "45m"
+    update = "45m"
+    delete = "60m"
   }
 }
