@@ -1,0 +1,15 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: argocd-gitlab-webhook
+  namespace: argocd
+spec:
+  encryptedData:
+    gitlabWebhookSecret: AgAeFV8g3cjJFlnn5p64uSV4fqUUspYr0v8DvaTZsKy6Dj/nIX9Is9bg6NAKVFkRFdyONw/LSmCjvYOyNWvUa8PW9rBaJNcTMmwhUBRMvy1o0bJzfJn/YSc9MzCWwOup8c0C3rZEGGDqpX0C/xOiX+n5iWifAWP7wBM+NiweHy2qiiyDaTel0fYG5KyLeilXIQyFosj8we+Mux96IRCLBQRfdmXktgts59UcsAsSkrcjtbp0a//mGAvFt8s23Sceez28Q9G79c81XulZbsM9skoFpFCzsep77yNCUQJWSGPZ07rtFspXhz8c2kpt7uU1dLLFvHny8/582Z95erIWoazaM2bqOGb8plXVnf1fNV5F5SN0baJHVKGw4+0dAHkrbQANU0Y4/turJdZ6PU6KbnQp1NQogJBMzK0XK/YkLlPah9D2VdbFGAttnt6hzQHojtvZgeo3oorsFgoYHROjRME12lWFrJbQmSWS4BgNrw5Hxwztdf7Q6n0e5xK3E4qGmrN1AIGJWw8i1gXlxxpuZEaiDUXO/p/F+3qAV4+nZ6+FWEVYbnAwXCe+ZNg4bKOTzK1co+FBbgPwyOy0Y85FGDOdQ3/a/Vgn1xLC5JNRejy/gRVPCaKa8uGWqlJ6NnjecQp285mGdbiuUT/leixUP7m/XPcWGBniFzFyoqSPcoIXgYetl2CKISJYPe/4NtysIPhUT31JH0q+l92hZhyP9zwqcPfsl/m65kKnTGFJQ8Uxn5T6Oj+riMGzd1w5dQ==
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: argocd
+      name: argocd-gitlab-webhook
+      namespace: argocd

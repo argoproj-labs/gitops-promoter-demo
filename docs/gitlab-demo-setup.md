@@ -121,7 +121,54 @@ kubectl create secret generic gitlab-demo-churn-credentials -n argocd \
 
 Commit **`charts/argocd/templates/gitlab-demo-churn-credentials.sealed.yaml`** and sync **`Application/argocd`** (or let the App-of-Apps reconcile it).
 
-## 6. Sync order
+## 6. Argo CD: GitLab → webhook (fast refresh)
+
+By default Argo CD **polls** Git about every **three minutes**. To refresh Applications as soon as the GitLab guestbook repo changes, send **project webhooks** to Argo CD’s **`/api/webhook`** endpoint. This is **separate** from **GitOps Promoter**’s receiver (this demo uses another hostname for Promoter—see [SETUP.md](../SETUP.md) **§12.1** / **§8** “Not the GitOps Promoter webhook”).
+
+Upstream: [Argo CD — Git webhook configuration](https://argo-cd.readthedocs.io/en/stable/operator-manual/webhook/) (GitLab uses **`webhook.gitlab.secret`** in **`argocd-secret`**).
+
+### 6.1 Create the webhook in GitLab
+
+In the **guestbook GitLab project**: **Settings → Webhooks** (or **Integrations**):
+
+| Field | Value |
+| --- | --- |
+| **URL** | `https://<your-argocd-host>/api/webhook` (this demo: **`https://demo.gitops-promoter.dev/api/webhook`**) |
+| **Secret token** | A long random string (same value you will seal for Argo CD below) |
+| **Trigger** | Enable **Push events** (repository updates). You can disable everything else unless you need it. |
+
+Save the webhook. **SSL verification** should stay on if Argo CD presents a valid cert (e.g. cert-manager on the ingress).
+
+### 6.2 Configure Argo CD with the same secret
+
+Argo CD verifies GitLab’s **`X-Gitlab-Token`** header against **`webhook.gitlab.secret`**. **argo-helm** maps that from **`configs.secret.gitlabSecret`**.
+
+**In this repo, Helm values are already wired** the same way as the GitHub webhook: **`charts/argocd/values.yaml`** sets **`gitlabSecret: "$argocd-gitlab-webhook:gitlabWebhookSecret"`** (companion **Secret** name + key). You do **not** edit values for a normal setup—only add the **cluster-specific** sealed manifest (like **`argocd-github-webhook.sealed.yaml`** in [SETUP.md §8](../SETUP.md#git-webhooks-sync-soon-after-you-push)).
+
+**Seal** **`argocd-gitlab-webhook`** in **`argocd`** with label **`app.kubernetes.io/part-of: argocd`** and data key **`gitlabWebhookSecret`** (the same string as GitLab’s **Secret token**):
+
+```bash
+# From repository root; replace YOUR_GITLAB_WEBHOOK_SECRET with the token you set in GitLab.
+kubectl create secret generic argocd-gitlab-webhook -n argocd \
+  --from-literal=gitlabWebhookSecret='YOUR_GITLAB_WEBHOOK_SECRET' \
+  --dry-run=client -o yaml \
+  | kubectl label --local --dry-run=client -f - app.kubernetes.io/part-of=argocd -o yaml \
+  | kubeseal \
+      --controller-name sealed-secrets \
+      --controller-namespace kube-system \
+      -o yaml -n argocd \
+      -w charts/argocd/templates/argocd-gitlab-webhook.sealed.yaml
+```
+
+Commit **`charts/argocd/templates/argocd-gitlab-webhook.sealed.yaml`** and sync **`Application/argocd`**.
+
+Until that **SealedSecret** exists and is synced, Argo CD cannot resolve the token and GitLab deliveries may fail verification. If you skip sealing entirely, GitLab can still call **`/api/webhook`**, but Argo CD cannot verify the caller; for a **public** Argo URL, sealing the secret is **strongly recommended** ([upstream](https://argo-cd.readthedocs.io/en/stable/operator-manual/webhook/#2-configure-argo-cd-with-the-webhook-secret-optional)).
+
+### 6.3 Verify
+
+Push a trivial commit to the GitLab guestbook repo. In Argo CD, Applications that use that repo should move to **Refreshing** quickly. In GitLab, open the webhook’s **Recent deliveries** and confirm **`HTTP 200`**.
+
+## 7. Sync order
 
 After merge + Argo refresh:
 
@@ -129,6 +176,6 @@ After merge + Argo refresh:
 2. Guestbook GitLab apps → need **`argocd-repo-gitlab-guestbook-write`** (public clone needs no read Secret).
 3. **`Application/demo-churn`** (GitLab half) → needs **`gitlab-demo-churn-credentials`** and the seeded file on **`main`**.
 
-## 7. Project ID
+## 8. Project ID
 
 `promoter-config-gitlab/git-repository.yaml` uses **`projectId: 81067674`**. If you recreate the project, update it (e.g. `curl -s https://gitlab.com/api/v4/projects/<path_encoded>`).

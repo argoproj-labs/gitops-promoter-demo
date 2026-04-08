@@ -80,8 +80,11 @@ argo-cd:
     # "$<secret>:<key>" from argocd-secret and resolves the value from that Secret at runtime.
     # Target Secret: seal and commit charts/argocd/templates/argocd-github-webhook.sealed.yaml
     # (same Argo CD Application as the argocd umbrella chart).
+    #
+    # GitLab project webhook → /api/webhook: seal argocd-gitlab-webhook.sealed.yaml (see docs/gitlab-demo-setup.md §6).
     secret:
       githubSecret: "$argocd-github-webhook:githubWebhookSecret"
+      gitlabSecret: "$argocd-gitlab-webhook:gitlabWebhookSecret"
     params:
       server.disable.auth: "false"
       server.insecure: "true"
