@@ -38,7 +38,7 @@ argo-cd:
     # Versions: Renovate — github-releases argoproj-labs/gitops-promoter (URLs below) + docker quay.io/argoprojlabs/argocd-extension-installer (image). Not the gitops-promoter Helm chart.
     initContainers:
       - name: extension-gitops-promoter
-        image: quay.io/argoprojlabs/argocd-extension-installer:v0.0.9@sha256:d2b43c18ac1401f579f6d27878f45e253d1e3f30287471ae74e6a4315ceb0611
+        image: quay.io/argoprojlabs/argocd-extension-installer:v1.0.0@sha256:7acac56647437f36b8b4682579c1efcbc8a45118a3c5892e1ea6bf746a2a59ba
         env:
           - name: EXTENSION_NAME
             value: gitops-promoter
