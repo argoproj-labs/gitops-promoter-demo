@@ -8,5 +8,5 @@ spec:
   gitlab: {}
   secretRef:
     # Create Secret/gitlab-scm-credentials in gitops-promoter with key "token" (project access token).
-    # See docs/gitlab-demo-setup.md
+    # Token role must allow pushing to protected main (Maintainer by default — see docs/gitlab-demo-setup.md §2).
     name: gitlab-scm-credentials

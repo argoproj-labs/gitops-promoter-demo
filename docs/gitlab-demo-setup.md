@@ -36,11 +36,23 @@ git add gitlab-seed
 
 In GitLab: **Project → Settings → Access tokens**
 
-- Role: **Developer** (or Maintainer)
+- **Role: Maintainer** (not Developer). The Argo CD source hydrator and the **`demo-churn-gitlab`** CronJob **commit directly to `main`** (no merge request). On a typical project, **`main` is protected** and only **Maintainer** (or higher) may push there; a **Developer** token often gets **`403 Forbidden — You are not allowed to push into this branch`** from the API even with **`write_repository`**.
 - Scopes: **`api`**, **`write_repository`**
 - Create token and store it securely.
 
-Use it in three places below (you may use one token for all three, or separate tokens with the same scopes).
+If you must use a **Developer** token instead, change **protected branch** rules so that role can push to **`main`**, or use a different branch and update **`GITLAB_DEFAULT_BRANCH`** / hydrator target branches accordingly.
+
+Use it in three places below (you may use one token for all three, or separate tokens with the same scopes and role).
+
+### Rotate / re-seal one token everywhere
+
+From the **repository root**, with **`kubectl`** pointed at the cluster that runs **Sealed Secrets** (`sealed-secrets` in **`kube-system`**) and **`kubeseal`** installed:
+
+```bash
+./scripts/reseal-gitlab-token.sh
+```
+
+You will be prompted to paste the token (input is hidden). The script rewrites the three **SealedSecret** files below. Override the guestbook repo URL if needed: **`GUESTBOOK_GITLAB_REPO_URL`**.
 
 ## 3. Secret `gitlab-scm-credentials` (namespace `gitops-promoter`)
 
