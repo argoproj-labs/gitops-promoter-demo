@@ -44,5 +44,5 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
         env:
-          LOG_LEVEL: debug
+          LOG_LEVEL: info
           RENOVATE_REPOSITORIES: '["${{ github.repository }}"]'
