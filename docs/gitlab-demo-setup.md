@@ -172,7 +172,7 @@ Push a trivial commit to the GitLab guestbook repo. In Argo CD, Applications tha
 
 After merge + Argo refresh:
 
-1. `promoter-config-gitlab` → `ScmProvider` / `GitRepository` / `PromotionStrategy` **demo-gitlab** (fails until `gitlab-scm-credentials` exists).
+1. **`Application/promoter-config`** (GitLab source: **`promoter-config-gitlab/`**) → `ScmProvider` / `GitRepository` / `PromotionStrategy` **demo-gitlab** (fails until `gitlab-scm-credentials` exists).
 2. Guestbook GitLab apps → need **`argocd-repo-gitlab-guestbook-write`** (public clone needs no read Secret).
 3. **`Application/demo-churn`** (GitLab half) → needs **`gitlab-demo-churn-credentials`** and the seeded file on **`main`**.
 

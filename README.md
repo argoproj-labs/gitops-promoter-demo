@@ -2,8 +2,7 @@
 
 Live demo on hosted Argo CD (GitOps Promoter extension):
 
-- **GitHub path** (control repo + guestbook + churn): [Open `promoter-config-github` — `demo-github` PromotionStrategy](https://demo.gitops-promoter.dev/applications/argocd/promoter-config-github?resource=&view=GitOps+Promoter&promotionstrategy=gitops-promoter%2Fdemo-github)
-- **GitLab path** (guestbook-only GitLab project, parallel flow): [Open `promoter-config-gitlab` — `demo-gitlab` PromotionStrategy](https://demo.gitops-promoter.dev/applications/argocd/promoter-config-gitlab?resource=&view=GitOps+Promoter&promotionstrategy=gitops-promoter%2Fdemo-gitlab)
+- **Promotion strategies** (**`demo-github`** on GitHub + **`demo-gitlab`** on GitLab): [open **`promoter-config`** in Argo CD](https://demo.gitops-promoter.dev/applications/argocd/promoter-config?resource=&view=GitOps+Promoter)
 
 You can use those views read-only without signing in. GitHub sign-in is for maintainers who need admin in Argo CD.
 
@@ -13,7 +12,7 @@ This repository is a hands-on reference for [GitOps Promoter](https://gitops-pro
 
 ## What GitOps Promoter does (here)
 
-You describe promotion rules under `promoter-config-github/` and `promoter-config-gitlab/`—for example a `PromotionStrategy` (environment order, auto-merge, which commit statuses must pass) together with `ScmProvider` and `GitRepository`. Controllers such as Argo CD health and a timer write status checks back to Git; `activeCommitStatuses` and `promoter-previous-environment` gate each step ([gating](https://gitops-promoter.readthedocs.io/en/latest/gating-promotions/)).
+You describe promotion rules under `promoter-config-github/` and `promoter-config-gitlab/` (both synced by one Argo CD Application, **`promoter-config`**)—for example a `PromotionStrategy` (environment order, auto-merge, which commit statuses must pass) together with `ScmProvider` and `GitRepository`. Controllers such as Argo CD health and a timer write status checks back to Git; `activeCommitStatuses` and `promoter-previous-environment` gate each step ([gating](https://gitops-promoter.readthedocs.io/en/latest/gating-promotions/)).
 
 In this demo, Argo CD’s [source hydrator](https://argo-cd.readthedocs.io/en/stable/user-guide/source-hydrator/) renders manifests into `hydrated/guestbook-*` on branches such as `env/dev-next`, `env/e2e-next`, and `env/prd-next`. GitOps Promoter opens and merges the pull requests that promote those changes through `env/dev`, `env/e2e`, and `env/prd` when your rules allow. What merges is rendered YAML—the same material Argo syncs.
 

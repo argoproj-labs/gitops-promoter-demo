@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: promoter-config-gitlab
+  name: promoter-config
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -9,12 +9,17 @@ metadata:
     argocd.argoproj.io/sync-wave: "4"
 spec:
   project: default
-  source:
-    repoURL: {{ .Values.repoURL | quote }}
-    targetRevision: HEAD
-    path: promoter-config-gitlab
-    directory:
-      recurse: true
+  sources:
+    - repoURL: {{ .Values.repoURL | quote }}
+      targetRevision: HEAD
+      path: promoter-config-github
+      directory:
+        recurse: true
+    - repoURL: {{ .Values.repoURL | quote }}
+      targetRevision: HEAD
+      path: promoter-config-gitlab
+      directory:
+        recurse: true
   destination:
     server: https://kubernetes.default.svc
     namespace: gitops-promoter
