@@ -2,7 +2,7 @@ replicaCount: 1
 
 # Bumped by manifests/demo-churn/github CronJob; surfaces in pod annotations for every GitHub guestbook environment.
 demoChurn:
-  lastBumped: "2026-04-14T13:45:18Z"
+  lastBumped: "2026-04-14T14:00:24Z"
 
 image:
   repository: gcr.io/google-samples/gb-frontend
