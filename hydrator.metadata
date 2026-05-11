@@ -1,7 +1,7 @@
 {
   "repoURL": "https://github.com/argoproj-labs/gitops-promoter-demo",
-  "drySha": "b58d4616d992e7cf58729c7eebc4b94c46183a79",
+  "drySha": "a070eee36ffdea7a5581ab9f9376c1d854e7a734",
   "author": "gitops-promoter-demo-labs-repo[bot] <273879727+gitops-promoter-demo-labs-repo[bot]@users.noreply.github.com>",
-  "date": "2026-05-11T05:15:08Z",
-  "subject": "chore: promoter demo churn 2026-05-11T05:15:08Z"
+  "date": "2026-05-11T05:30:09Z",
+  "subject": "chore: promoter demo churn 2026-05-11T05:30:08Z"
 }
