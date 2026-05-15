@@ -5,6 +5,6 @@ To hydrate the manifests in this repository, run the following commands:
 ```shell
 git clone https://github.com/argoproj-labs/gitops-promoter-demo
 # cd into the cloned directory
-git checkout 6e45251d09f0bb3bf40d14a01fb94eb01be1cdb3
+git checkout a4f2df924f57f6bbe53654d1f2bd87fe3e2c7ab6
 helm template . --name-template guestbook-github-prd --namespace guestbook-github-prd --values ./demo-apps/guestbook/env/prd/values.yaml --include-crds
 ```
