@@ -1,6 +1,6 @@
 {
   "repoURL": "https://github.com/argoproj-labs/gitops-promoter-demo",
-  "drySha": "6aa0a56c6432d27d02ffc3de3d2cfe18931be007",
+  "drySha": "c6177fb9f798da8ca811284d94e7f9f55b455ae5",
   "commands": [
     "helm template . --name-template guestbook-github-prd --namespace guestbook-github-prd --values ./demo-apps/guestbook/env/prd/values.yaml --include-crds"
   ]
