@@ -1,6 +1,6 @@
 dependencies:
 - name: gitops-promoter
   repository: https://argoproj-labs.github.io/gitops-promoter-helm/
-  version: 0.11.0
-digest: sha256:a0bf122a92947373b5cf9bfb96d22a1a115c10b6770c61b95b4d2a7640efa2ff
-generated: "2026-06-04T09:11:56.455139706Z"
+  version: 0.11.1
+digest: sha256:7601169bcd02d0acab0c23f64665dc5eb236fde7a638788376e2f8f59c07b16b
+generated: "2026-06-09T08:47:13.543536005Z"
