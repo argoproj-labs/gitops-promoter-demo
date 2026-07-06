@@ -40,7 +40,7 @@ jobs:
       # Without RENOVATE_REPOSITORIES, the container exits with "No repositories found"
       # (it does not infer the repo from checkout alone).
       - name: Self-hosted Renovate
-        uses: renovatebot/github-action@dd5302ec17783b2fc721b19ae7209b57b1587765 # v46.1.17
+        uses: renovatebot/github-action@b50d2ba2bd928235abdcc14d06dfafc217f1c565 # v46.1.18
         with:
           token: ${{ steps.app-token.outputs.token }}
         env:
